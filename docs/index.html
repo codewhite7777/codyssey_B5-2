@@ -1,0 +1,1336 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mini Git 개념 애니메이션</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<style>
+/* Layout: 위에서 아래로 공부 순서대로. 개념마다 [한 줄 설명 → 비유/왜/특징 → 클릭 스테퍼]. */
+:root {
+  --paper: #f3f5f9;
+  --surface: #ffffff;
+  --ink: #18202d;
+  --muted: #5b6678;
+  --line: #d3d9e3;
+  --line-strong: #9aa4b4;
+  --accent: #2752d4;
+  --accent-soft: #e2e9fc;
+  --wait: #a86f00;
+  --wait-soft: #fcefd2;
+  --cur: #d9581a;
+  --cur-soft: #fde3d4;
+  --done: #1f8255;
+  --done-soft: #d9f1e5;
+  --bad: #c42b2b;
+  --bad-soft: #fde0e0;
+  --dim: #c1c8d2;
+  --dim-soft: #eef1f5;
+  --code: #eef2f8;
+  --display: "Do Hyeon", "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", sans-serif;
+  --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "Noto Sans CJK KR", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, "Noto Sans Mono", monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #10141b; --surface: #19202a; --ink: #e6ebf2; --muted: #9ba6b6; --line: #2d3644; --line-strong: #5d6878;
+    --accent: #7f9dff; --accent-soft: #1d2a4c; --wait: #e9b44c; --wait-soft: #392b10; --cur: #ff9154; --cur-soft: #3d2316;
+    --done: #4fc58c; --done-soft: #12322a; --bad: #ff7272; --bad-soft: #3d1a1c; --dim: #4a5362; --dim-soft: #212833; --code: #141a22;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #10141b; --surface: #19202a; --ink: #e6ebf2; --muted: #9ba6b6; --line: #2d3644; --line-strong: #5d6878;
+  --accent: #7f9dff; --accent-soft: #1d2a4c; --wait: #e9b44c; --wait-soft: #392b10; --cur: #ff9154; --cur-soft: #3d2316;
+  --done: #4fc58c; --done-soft: #12322a; --bad: #ff7272; --bad-soft: #3d1a1c; --dim: #4a5362; --dim-soft: #212833; --code: #141a22;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.7;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 96px;
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 76px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+h1, h2 { font-family: var(--display); font-weight: 400; letter-spacing: 0.01em; }
+h1 { font-size: clamp(34px, 6vw, 52px); line-height: 1.15; }
+h2 { font-size: clamp(28px, 4.4vw, 38px); line-height: 1.2; }
+h3 { font-size: 15px; font-weight: 700; }
+p { margin: 0; }
+code { font-family: var(--mono); font-size: 0.92em; background: var(--code); padding: 1px 5px; border-radius: 5px; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, summary:focus-visible, .stepper:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+.eyebrow { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; color: var(--accent); }
+.lede { font-size: 18px; color: var(--muted); max-width: 64ch; }
+
+header { display: flex; flex-direction: column; gap: 16px; }
+.howto { display: flex; flex-wrap: wrap; gap: 10px; }
+.howto span { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 14.5px; }
+.howto b { color: var(--accent); }
+.order { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.order-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.order-group { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.order-group h3 { font-size: 13px; letter-spacing: 0.06em; color: var(--muted); }
+.order-group ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.order-group a { display: flex; gap: 10px; align-items: baseline; text-decoration: none; color: var(--ink); padding: 6px 10px; border-radius: 9px; background: var(--paper); font-weight: 600; font-size: 15px; }
+.order-group a:hover { color: var(--accent); }
+.order-group a i { font-style: normal; font-family: var(--mono); font-size: 13px; color: var(--accent); min-width: 1.6em; }
+.order-group a small { font-weight: 400; color: var(--muted); font-size: 13px; margin-left: auto; }
+
+section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 20px; }
+.sec-head { display: flex; flex-direction: column; gap: 8px; }
+.oneliner { font-size: 19px; font-weight: 600; max-width: 62ch; }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.card .tag { align-self: flex-start; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+.tag.t1 { background: var(--wait-soft); color: var(--wait); }
+.tag.t2 { background: var(--accent-soft); color: var(--accent); }
+.tag.t3 { background: var(--done-soft); color: var(--done); }
+.card p, .card li { font-size: 15px; line-height: 1.7; }
+.card ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
+.note { font-size: 14.5px; color: var(--muted); border-left: 3px solid var(--line-strong); padding-left: 12px; }
+.note b { color: var(--ink); }
+.more { font-size: 14.5px; font-weight: 600; }
+
+/* stepper */
+.stepper { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
+.st-top { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); }
+.stage { position: relative; padding: 14px 14px 36px; border-right: 1px solid var(--line); cursor: pointer; min-width: 0; user-select: none; -webkit-user-select: none; }
+.stage svg { display: block; width: 100%; height: auto; }
+@media (max-width: 620px) { .stage { overflow-x: auto; } .stage svg.wide { min-width: 600px; } }
+.hint { position: absolute; right: 12px; bottom: 10px; font-size: 12px; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 2px 9px; border-radius: 999px; pointer-events: none; }
+.side { padding: 18px; display: flex; flex-direction: column; gap: 14px; background: var(--paper); min-width: 0; }
+.say { font-size: 15.5px; line-height: 1.75; min-height: 6.6em; }
+.say b { color: var(--accent); }
+.panels { display: flex; flex-direction: column; gap: 12px; }
+.panel { display: flex; flex-direction: column; gap: 6px; }
+.panel-label { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; color: var(--muted); }
+.items { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; align-items: center; }
+.item { font-family: var(--mono); font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 7px; border: 1.5px solid; }
+.item.wait { background: var(--wait-soft); border-color: var(--wait); color: var(--wait); }
+.item.done { background: var(--done-soft); border-color: var(--done); color: var(--done); }
+.item.accent { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.item.bad { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+.item.plain { background: var(--surface); border-color: var(--line); color: var(--ink); font-weight: 400; }
+.empty { font-size: 13px; color: var(--muted); }
+.controls { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.controls button { font-family: var(--body); font-size: 14px; font-weight: 600; padding: 7px 14px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.controls button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.controls button:disabled { opacity: 0.4; cursor: default; }
+.controls button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.controls button.primary:hover:not(:disabled) { color: var(--surface); filter: brightness(1.08); }
+.count { margin-left: auto; font-family: var(--mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bar { height: 4px; background: var(--dim-soft); }
+.bar > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .25s ease; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; padding: 10px 16px 14px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid; display: inline-block; }
+.lg-idle { background: var(--surface); border-color: var(--line-strong); }
+.lg-wait { background: var(--wait-soft); border-color: var(--wait); }
+.lg-cur { background: var(--cur-soft); border-color: var(--cur); }
+.lg-done { background: var(--done-soft); border-color: var(--done); }
+.lg-path { background: var(--accent-soft); border-color: var(--accent); }
+.lg-bad { background: var(--bad-soft); border-color: var(--bad); }
+.lg-dim { background: var(--dim-soft); border-color: var(--dim); border-style: dashed; }
+
+/* graph svg */
+.gnode { transition: opacity .35s; }
+.gnode circle { stroke-width: 2.5; transition: fill .35s, stroke .35s, stroke-width .35s; }
+.s-idle circle { fill: var(--surface); stroke: var(--line-strong); }
+.s-wait circle { fill: var(--wait-soft); stroke: var(--wait); }
+.s-cur circle { fill: var(--cur-soft); stroke: var(--cur); stroke-width: 4; }
+.s-done circle { fill: var(--done-soft); stroke: var(--done); }
+.s-path circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 4; }
+.s-dim circle { fill: var(--dim-soft); stroke: var(--dim); stroke-dasharray: 5 4; }
+.s-bad circle { fill: var(--bad-soft); stroke: var(--bad); stroke-width: 3.5; }
+.s-ghost circle { fill: var(--surface); stroke: var(--line-strong); stroke-dasharray: 6 5; }
+.s-hidden { opacity: 0; }
+.nlabel { fill: var(--ink); font-family: var(--mono); font-weight: 600; font-size: 15px; text-anchor: middle; dominant-baseline: central; }
+.s-dim .nlabel, .s-ghost .nlabel { fill: var(--muted); }
+.edge { stroke-width: 2; transition: stroke .35s, opacity .35s, stroke-width .35s; }
+.e-base { stroke: var(--line-strong); }
+.e-tree { stroke: var(--accent); stroke-dasharray: 5 4; opacity: .75; }
+.e-hl { stroke: var(--accent); stroke-width: 4.5; }
+.e-dim { stroke: var(--dim); stroke-dasharray: 5 4; }
+.e-bad { stroke: var(--bad); stroke-width: 4; }
+.e-ghost { stroke: var(--line-strong); stroke-dasharray: 6 5; }
+.e-hidden { opacity: 0; }
+.ah-base { fill: var(--line-strong); }
+.ah-hl { fill: var(--accent); }
+.ah-bad { fill: var(--bad); }
+.badge-g { opacity: 0; transition: opacity .25s; }
+.badge-g.on { opacity: 1; }
+.badge-bg { fill: var(--surface); stroke: var(--line); stroke-width: 1; }
+.badge { fill: var(--ink); font-family: var(--body); font-size: 12px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.tagbox { stroke-width: 1.5; }
+.tag-branch { fill: var(--done-soft); stroke: var(--done); }
+.tag-head { fill: var(--cur-soft); stroke: var(--cur); }
+.tagtext { font-family: var(--body); font-size: 12px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.tagtext-branch { fill: var(--done); }
+.tagtext-head { fill: var(--cur); }
+
+/* custom svg (hashmap, queue, index, merge) */
+.t-title { fill: var(--muted); font-family: var(--body); font-size: 13px; font-weight: 700; dominant-baseline: central; }
+.t-mono { fill: var(--ink); font-family: var(--mono); font-size: 14px; font-weight: 600; dominant-baseline: central; }
+.t-small { fill: var(--ink); font-family: var(--mono); font-size: 12.5px; dominant-baseline: central; }
+.t-body { fill: var(--ink); font-family: var(--body); font-size: 13.5px; dominant-baseline: central; }
+.t-muted { fill: var(--muted); font-family: var(--body); font-size: 12.5px; dominant-baseline: central; }
+.t-accent { fill: var(--accent); font-family: var(--body); font-size: 13px; font-weight: 700; dominant-baseline: central; }
+.t-yes { fill: var(--done); font-family: var(--body); font-size: 15px; font-weight: 700; dominant-baseline: central; }
+.t-no { fill: var(--bad); font-family: var(--body); font-size: 15px; font-weight: 700; dominant-baseline: central; }
+.b-plain { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.b-empty { fill: var(--paper); stroke: var(--line); stroke-width: 1.2; stroke-dasharray: 5 4; }
+.b-no { fill: var(--bad-soft); stroke: var(--bad); stroke-width: 2; }
+.b-yes { fill: var(--done-soft); stroke: var(--done); stroke-width: 2.5; }
+.b-hit { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+.b-calc { fill: var(--wait-soft); stroke: var(--wait); stroke-width: 2.5; }
+.b-touch { fill: var(--wait-soft); stroke: var(--wait); stroke-width: 1.5; }
+.b-tube { fill: var(--paper); stroke: var(--line-strong); stroke-width: 2; }
+.b-item { fill: var(--wait-soft); stroke: var(--wait); stroke-width: 2; }
+.b-out { fill: var(--done-soft); stroke: var(--done); stroke-width: 2; }
+.ln { stroke: var(--line-strong); stroke-width: 2; fill: none; }
+.ln-acc { stroke: var(--accent); stroke-width: 2.5; fill: none; }
+.chip { stroke-width: 2; }
+.chip.idle { fill: var(--surface); stroke: var(--line-strong); }
+.chip.cur { fill: var(--cur-soft); stroke: var(--cur); }
+.chip.src { fill: var(--wait-soft); stroke: var(--wait); }
+.chip.done { fill: var(--done-soft); stroke: var(--done); }
+.chip.twin { stroke: var(--accent); stroke-width: 3; }
+.ctext { fill: var(--ink); font-family: var(--mono); font-weight: 600; font-size: 15px; text-anchor: middle; dominant-baseline: central; }
+.grp { fill: none; stroke: var(--line); stroke-width: 1.5; }
+.grp.cur { stroke: var(--cur); stroke-width: 2.5; }
+.rowlabel { fill: var(--muted); font-family: var(--body); font-size: 13px; font-weight: 700; dominant-baseline: central; }
+.pop { animation: pop .4s ease both; transform-box: fill-box; transform-origin: center; }
+@keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.96); } to { opacity: 1; transform: none; } }
+
+/* code */
+details.code { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+details.code summary { cursor: pointer; padding: 14px 18px; font-weight: 700; font-size: 15px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+details.code summary span { font-weight: 400; color: var(--muted); font-size: 14px; }
+details.code pre { margin: 0; padding: 18px; background: var(--code); overflow-x: auto; font-family: var(--mono); font-size: 13.5px; line-height: 1.65; border-top: 1px solid var(--line); }
+.cm { color: var(--done); }
+.kw { color: var(--accent); font-weight: 600; }
+
+footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 20px; }
+
+@media (max-width: 820px) {
+  .st-top { grid-template-columns: minmax(0, 1fr); }
+  .stage { border-right: 0; border-bottom: 1px solid var(--line); }
+  .trio, .order-groups { grid-template-columns: minmax(0, 1fr); }
+}
+.capture *, .capture *::before { transition: none !important; animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">CODYSSEY B5-2 · MINI GIT</p>
+  <h1>Mini Git 개념 애니메이션</h1>
+  <p class="lede">과제에 나오는 개념 12개를 공부 순서대로 모았어요. 그림을 한 번 누를 때마다 한 단계씩 진행되고, 오른쪽에 지금 무슨 일이 일어나는지 쉬운 말로 나옵니다. 글로 된 자세한 설명은 <a href="https://github.com/codewhite7777/codyssey_b5-2/blob/main/CONCEPTS.md">CONCEPTS.md</a>에 있어요.</p>
+  <div class="howto">
+    <span><b>그림 클릭</b> = 다음 단계</span>
+    <span>마지막 단계에서 클릭 = 처음으로</span>
+    <span>그림을 누른 뒤 <b>← →</b> 키로도 이동</span>
+    <span><b>자동 재생</b> 버튼 = 저절로 넘어감</span>
+  </div>
+  <nav class="order" aria-label="공부 순서">
+    <p class="eyebrow">공부 순서</p>
+    <div class="order-groups">
+      <div class="order-group"><h3>A. 데이터를 담는 구조</h3><ol>
+        <li><a href="#graph"><i>01</i>그래프<small>점과 선</small></a></li>
+        <li><a href="#tree"><i>02</i>트리 · 커밋 트리<small>브랜치, HEAD</small></a></li>
+        <li><a href="#dag"><i>03</i>DAG와 사이클<small>왜 DAG?</small></a></li>
+        <li><a href="#hashmap"><i>04</i>해시맵<small>O(1) 조회</small></a></li>
+      </ol></div>
+      <div class="order-group"><h3>B. 찾기 · 탐색</h3><ol>
+        <li><a href="#queue"><i>05</i>큐<small>줄 서기</small></a></li>
+        <li><a href="#bfs"><i>06</i>BFS<small>탐색의 기본</small></a></li>
+        <li><a href="#path"><i>07</i>최단 경로<small>기록 되짚기</small></a></li>
+        <li><a href="#lexpath"><i>08</i>PATH 사전순 규칙<small>Mini Git 방식</small></a></li>
+        <li><a href="#ancestors"><i>09</i>조상 탐색<small>ANCESTORS</small></a></li>
+      </ol></div>
+      <div class="order-group"><h3>C. 순서 · 검색</h3><ol>
+        <li><a href="#topo"><i>10</i>위상 정렬<small>LOG</small></a></li>
+        <li><a href="#mergesort"><i>11</i>병합 정렬<small>--sort-by</small></a></li>
+        <li><a href="#index"><i>12</i>역색인<small>SEARCH</small></a></li>
+      </ol></div>
+    </div>
+  </nav>
+</header>
+
+<!-- 01 그래프 -->
+<section id="graph">
+  <div class="sec-head">
+    <p class="eyebrow">01 · 자료구조</p>
+    <h2>그래프</h2>
+    <p class="oneliner">점(노드)과 그 점들을 잇는 선(간선)으로 "무엇과 무엇이 연결돼 있나"를 표현하는 구조.</p>
+  </div>
+  <div class="trio">
+    <div class="card"><span class="tag t1">쉬운 비유</span><p>지하철 노선도. 역이 점, 역과 역을 잇는 철로가 선이에요. 친구 관계도(사람 = 점, 친구 사이 = 선)도 그래프죠.</p></div>
+    <div class="card"><span class="tag t2">왜 필요해?</span><ul><li>Git 이력은 커밋끼리 이어진 그래프예요.</li><li>LOG, PATH, ANCESTORS는 전부 이 그래프를 돌아다니는 일이에요.</li></ul></div>
+    <div class="card"><span class="tag t3">특징</span><ul><li>선에 화살표가 있으면 <b>방향 그래프</b></li><li>점마다 "이웃 목록"을 저장 (인접 리스트)</li><li>Mini Git은 <code>parents</code>, <code>children</code> 두 목록</li></ul></div>
+  </div>
+  <div class="stepper" data-stepper="graph"></div>
+  <a class="more" href="https://github.com/codewhite7777/codyssey_b5-2/blob/main/CONCEPTS.md#graph">글로 자세히 읽기 →</a>
+</section>
+
+<!-- 02 트리 -->
+<section id="tree">
+  <div class="sec-head">
+    <p class="eyebrow">02 · 자료구조</p>
+    <h2>트리 · 커밋 트리</h2>
+    <p class="oneliner">뿌리 하나에서 가지가 갈라져 나가는 그래프. 모든 점의 부모가 딱 하나(뿌리만 0개)예요.</p>
+  </div>
+  <div class="trio">
+    <div class="card"><span class="tag t1">쉬운 비유</span><p>나무를 거꾸로 세운 모양, 또는 회사 조직도. 맨 위 대표(뿌리) 아래로 팀이 갈라지고, 팀원 한 명의 상사는 한 명뿐이에요.</p></div>
+    <div class="card"><span class="tag t2">왜 필요해?</span><ul><li>merge가 없는 이번 과제에서 커밋 이력은 항상 트리예요.</li><li>BRANCH로 가지가 생기고 COMMIT으로 가지가 자라요.</li></ul></div>
+    <div class="card"><span class="tag t3">특징 · 용어</span><ul><li><b>뿌리(root)</b>: 부모 없는 첫 커밋</li><li><b>잎(leaf)</b>: 자식 없는 끝 커밋</li><li><b>깊이</b>: 뿌리에서 몇 칸 내려왔나</li><li><b>브랜치</b> = 커밋을 가리키는 이름표, <b>HEAD</b> = 지금 서 있는 브랜치</li></ul></div>
+  </div>
+  <div class="stepper" data-stepper="tree"></div>
+  <a class="more" href="https://github.com/codewhite7777/codyssey_b5-2/blob/main/CONCEPTS.md#tree">글로 자세히 읽기 →</a>
+</section>
+
+<!-- 03 DAG -->
+<section id="dag">
+  <div class="sec-head">
+    <p class="eyebrow">03 · 자료구조</p>
+    <h2>DAG와 사이클</h2>
+    <p class="oneliner">DAG = 화살표에 방향이 있고(Directed), 따라가도 제자리로 돌아오지 않는(Acyclic) 그래프.</p>
+  </div>
+  <div class="trio">
+    <div class="card"><span class="tag t1">쉬운 비유</span><p>족보. 할아버지 → 아버지 → 나 순서로만 이어지고, 내가 할아버지의 아버지가 되는 일은 없어요. 그런 "고리"가 바로 사이클이에요.</p></div>
+    <div class="card"><span class="tag t2">왜 필요해?</span><ul><li>사이클이 있으면 "부모 먼저" 순서(LOG)를 정할 수 없어요.</li><li>조상 찾기가 끝나지 않아요.</li><li>과제 요구사항: 커밋 그래프는 DAG여야 함</li></ul></div>
+    <div class="card"><span class="tag t3">특징</span><ul><li>트리는 DAG의 한 종류 (부모가 1개인 DAG)</li><li>merge 커밋(부모 2개)이 생겨도 DAG는 유지</li><li>위상 정렬은 DAG에서만 가능</li></ul></div>
+  </div>
+  <div class="stepper" data-stepper="dag"></div>
+  <a class="more" href="https://github.com/codewhite7777/codyssey_b5-2/blob/main/CONCEPTS.md#dag">글로 자세히 읽기 →</a>
+</section>
+
+<!-- 04 해시맵 -->
+<section id="hashmap">
+  <div class="sec-head">
+    <p class="eyebrow">04 · 자료구조</p>
+    <h2>해시맵 (딕셔너리)</h2>
+    <p class="oneliner">키로 "칸 번호"를 계산해서, 처음부터 훑지 않고 그 칸으로 바로 가는 저장 방법.</p>
+  </div>
+  <div class="trio">
+    <div class="card"><span class="tag t1">쉬운 비유</span><p>사물함. 이름표를 보면 몇 번 사물함인지 바로 알아서 그 칸만 열어요. 리스트는 사물함을 1번부터 하나씩 다 열어 보는 방식이에요.</p></div>
+    <div class="card"><span class="tag t2">왜 필요해?</span><ul><li><code>commits[hash]</code>로 커밋을 바로 찾기</li><li>새 hash가 이미 있는지 바로 확인 → 중복 방지</li><li>역색인도 해시맵으로 만들어요</li></ul></div>
+    <div class="card"><span class="tag t3">특징</span><ul><li>찾기·넣기·있는지 확인: 평균 <b>O(1)</b></li><li>리스트에서 찾기: <b>O(N)</b></li><li>파이썬의 <code>dict</code>, <code>set</code>이 해시맵</li></ul></div>
+  </div>
+  <div class="stepper" data-stepper="hashmap"></div>
+  <a class="more" href="https://github.com/codewhite7777/codyssey_b5-2/blob/main/CONCEPTS.md#hashmap">글로 자세히 읽기 →</a>
+</section>
+
+<!-- 05 큐 -->
+<section id="queue">
+  <div class="sec-head">
+    <p class="eyebrow">05 · 자료구조</p>
+    <h2>큐 (Queue)</h2>
+    <p class="oneliner">뒤로 들어가서 앞으로 나오는 줄. 먼저 들어온 것이 먼저 나와요.</p>
+  </div>
+  <div class="trio">
+    <div class="card"><span class="tag t1">쉬운 비유</span><p>편의점 계산 줄. 먼저 온 손님이 먼저 계산하고, 새 손님은 줄 맨 뒤에 서요.</p></div>
+    <div class="card"><span class="tag t2">왜 필요해?</span><ul><li>BFS와 위상 정렬이 "다음에 처리할 것"을 큐에 줄 세워요.</li><li>먼저 발견한 것을 먼저 처리해야 가까운 순서가 지켜져요.</li></ul></div>
+    <div class="card"><span class="tag t3">특징</span><ul><li><b>FIFO</b>: First In, First Out</li><li>파이썬은 <code>collections.deque</code></li><li>넣기 <code>append</code>, 꺼내기 <code>popleft</code> 모두 O(1)</li></ul></div>
+  </div>
+  <div class="stepper" data-stepper="queue"></div>
+  <a class="more" href="https://github.com/codewhite7777/codyssey_b5-2/blob/main/CONCEPTS.md#queue">글로 자세히 읽기 →</a>
+</section>
+
+<!-- 06 BFS -->
+<section id="bfs">
+  <div class="sec-head">
+    <p class="eyebrow">06 · 알고리즘</p>
+    <h2>BFS (너비 우선 탐색)</h2>
+    <p class="oneliner">가까운 곳부터 한 겹씩 넓혀 가며, 연결된 점을 하나도 빠뜨리지 않고 둘러보는 방법.</p>
+  </div>
+  <div class="trio">
+    <div class="card"><span class="tag t1">쉬운 비유</span><p>호수에 돌을 던지면 물결이 동그랗게 퍼지죠. 바로 옆(1겹)을 먼저 다 적시고, 그다음 2겹, 3겹으로 가요.</p></div>
+    <div class="card"><span class="tag t2">왜 필요해?</span><ul><li>연결된 모든 점을 <b>빠짐없이</b> 찾을 때</li><li>같은 점을 <b>두 번 보지 않게</b> 할 때</li><li>"몇 칸 떨어졌나"가 덤으로 나와 최단 경로의 바탕이 돼요</li></ul></div>
+    <div class="card"><span class="tag t3">특징</span><ul><li><b>큐</b> + <b>visited</b>(방문 표시) 집합</li><li>가까운 순서(거리 순)로 방문</li><li>시간 <code>O(V+E)</code>: 점 수 + 선 수</li></ul></div>
+  </div>
+  <div class="stepper" data-stepper="bfs"></div>
+  <p class="note"><b>흔한 실수:</b> visited 표시를 큐에서 <b>꺼낼 때</b> 하면 같은 점이 줄에 여러 번 서요. 큐에 <b>넣을 때</b> 바로 표시하세요. (위 그림의 E는 B와 C 둘 다의 이웃이지만 한 번만 들어가요.)</p>
+  <details class="code"><summary>파이썬 코드 보기 <span>Mini Git: graph.py · bfs_order()</span></summary>
+<pre><span class="kw">from</span> collections <span class="kw">import</span> deque
+
+<span class="kw">def</span> bfs(graph, start):
+    visited = {start}          <span class="cm"># 넣을 때 바로 "방문함" 표시</span>
+    queue = deque([start])     <span class="cm"># 줄 서기</span>
+    order = []
+    <span class="kw">while</span> queue:
+        node = queue.popleft()     <span class="cm"># 맨 앞에서 꺼내기</span>
+        order.append(node)
+        <span class="kw">for</span> nxt <span class="kw">in</span> graph[node]:    <span class="cm"># 이웃 하나씩 보기</span>
+            <span class="kw">if</span> nxt <span class="kw">not in</span> visited:
+                visited.add(nxt)
+                queue.append(nxt)  <span class="cm"># 맨 뒤에 줄 세우기</span>
+    <span class="kw">return</span> order</pre></details>
+  <a class="more" href="https://github.com/codewhite7777/codyssey_b5-2/blob/main/CONCEPTS.md#bfs">글로 자세히 읽기 →</a>
+</section>
+
+<!-- 07 최단 경로 -->
+<section id="path">
+  <div class="sec-head">
+    <p class="eyebrow">07 · 알고리즘</p>
+    <h2>최단 경로</h2>
+    <p class="oneliner">BFS를 돌리면서 "누가 나를 데려왔는지"를 적어 두고, 도착하면 그 기록을 거꾸로 따라가는 방법.</p>
+  </div>
+  <div class="trio">
+    <div class="card"><span class="tag t1">쉬운 비유</span><p>지하철에서 "정거장 수가 가장 적은 길" 찾기. 1정거장 거리 역을 다 표시하고, 2정거장, 3정거장… 목적지가 처음 표시되는 순간이 가장 가까운 거리예요.</p></div>
+    <div class="card"><span class="tag t2">왜 필요해?</span><ul><li>Mini Git <code>PATH</code>: 두 커밋이 이력상 몇 칸 떨어졌는지</li><li>경로가 없으면 <code>No path</code></li></ul></div>
+    <div class="card"><span class="tag t3">특징</span><ul><li>모든 선의 비용이 <b>똑같이 1</b>일 때만 정답</li><li>비용이 다르면 다익스트라가 필요</li><li>시간 <code>O(V+E)</code></li></ul></div>
+  </div>
+  <div class="stepper" data-stepper="path"></div>
+  <details class="code"><summary>파이썬 코드 보기 <span>기본형 (prev 기록)</span></summary>
+<pre><span class="kw">def</span> shortest_path(graph, start, goal):
+    prev = {start: <span class="kw">None</span>}        <span class="cm"># 누가 나를 데려왔나</span>
+    queue = deque([start])
+    <span class="kw">while</span> queue:
+        node = queue.popleft()
+        <span class="kw">if</span> node == goal:
+            <span class="kw">break</span>
+        <span class="kw">for</span> nxt <span class="kw">in</span> graph[node]:
+            <span class="kw">if</span> nxt <span class="kw">not in</span> prev:
+                prev[nxt] = node
+                queue.append(nxt)
+    <span class="kw">if</span> goal <span class="kw">not in</span> prev:
+        <span class="kw">return None</span>                 <span class="cm"># No path</span>
+    path = []
+    <span class="kw">while</span> goal <span class="kw">is not None</span>:     <span class="cm"># 도착점에서 거꾸로</span>
+        path.append(goal)
+        goal = prev[goal]
+    <span class="kw">return</span> path[::-1]</pre></details>
+  <a class="more" href="https://github.com/codewhite7777/codyssey_b5-2/blob/main/CONCEPTS.md#path">글로 자세히 읽기 →</a>
+</section>
+
+<!-- 08 PATH 사전순 -->
+<section id="lexpath">
+  <div class="sec-head">
+    <p class="eyebrow">08 · 알고리즘 · Mini Git 방식</p>
+    <h2>PATH 사전순 규칙</h2>
+    <p class="oneliner">최단 경로가 여러 개면 "hash1->hash2->… 문자열이 사전순으로 가장 작은 경로"를 골라야 해요. 거리를 도착점에서 먼저 재고, 출발점부터 가장 작은 hash를 골라 걸어가요.</p>
+  </div>
+  <div class="trio">
+    <div class="card"><span class="tag t1">쉬운 비유</span><p>내비게이션에 "남은 거리"가 칸마다 적혀 있다고 생각해 보세요. 갈림길마다 남은 거리가 1 줄어드는 길 중 이름이 가장 앞(가나다순)인 길로 가는 거예요.</p></div>
+    <div class="card"><span class="tag t2">왜 이렇게 해?</span><ul><li>과제 규칙: 길이가 같으면 사전순 최소</li><li>"남은 거리"를 알면 한 칸씩 가장 작은 hash만 골라도 된다</li></ul></div>
+    <div class="card"><span class="tag t3">특징</span><ul><li>BFS 1번 + 걸어가기 1번 → <code>O(V+E)</code></li><li>hash 길이가 모두 7로 같아서 칸 단위 비교 = 문자열 비교</li><li>코드: <code>graph.py · shortest_path()</code></li></ul></div>
+  </div>
+  <div class="stepper" data-stepper="lexpath"></div>
+  <p class="note"><b>언제 실제로 생기나:</b> 같은 길이의 경로가 여러 개 생기려면 merge(부모 2개)가 필요해요. 이번 과제는 merge를 안 만들어서 CLI로는 이 상황이 안 생기지만, 규칙은 코드에 구현돼 있고 EVALUATION.md 1-4에 직접 확인하는 명령이 있어요. 그림은 hash를 2글자로 줄였어요.</p>
+  <a class="more" href="https://github.com/codewhite7777/codyssey_b5-2/blob/main/CONCEPTS.md#lexpath">글로 자세히 읽기 →</a>
+</section>
+
+<!-- 09 조상 탐색 -->
+<section id="ancestors">
+  <div class="sec-head">
+    <p class="eyebrow">09 · 알고리즘</p>
+    <h2>조상 탐색</h2>
+    <p class="oneliner">부모 쪽 화살표만 따라 끝까지 올라가는 BFS. BFS 코드에서 "이웃 = 부모"로만 바꾸면 돼요.</p>
+  </div>
+  <div class="trio">
+    <div class="card"><span class="tag t1">쉬운 비유</span><p>족보 거슬러 올라가기. 나 → 부모님 → 조부모님. 형제나 사촌은 "위로" 올라가서 닿는 사람이 아니니 조상이 아니에요.</p></div>
+    <div class="card"><span class="tag t2">왜 필요해?</span><ul><li>Mini Git <code>ANCESTORS</code></li><li>"이 커밋에 어떤 변경들이 다 들어 있나?" = 조상 전부</li></ul></div>
+    <div class="card"><span class="tag t3">특징</span><ul><li><b>방향이 있는</b> BFS (부모 방향만)</li><li>merge 때문에 같은 조상을 두 길로 만날 수 있음 → visited 필수</li><li>형제 가지는 절대 안 나옴</li></ul></div>
+  </div>
+  <div class="stepper" data-stepper="ancestors"></div>
+  <details class="code"><summary>파이썬 코드 보기 <span>Mini Git: graph.py · find_ancestors()</span></summary>
+<pre><span class="kw">def</span> ancestors(parents, start):
+    visited = {start}
+    queue = deque([start])
+    result = []
+    <span class="kw">while</span> queue:
+        node = queue.popleft()
+        <span class="kw">for</span> p <span class="kw">in</span> parents[node]:      <span class="cm"># 부모 쪽으로만!</span>
+            <span class="kw">if</span> p <span class="kw">not in</span> visited:       <span class="cm"># 두 길로 만나도 한 번만</span>
+                visited.add(p)
+                result.append(p)
+                queue.append(p)
+    <span class="kw">return</span> result</pre></details>
+  <a class="more" href="https://github.com/codewhite7777/codyssey_b5-2/blob/main/CONCEPTS.md#ancestors">글로 자세히 읽기 →</a>
+</section>
+
+<!-- 10 위상 정렬 -->
+<section id="topo">
+  <div class="sec-head">
+    <p class="eyebrow">10 · 알고리즘</p>
+    <h2>위상 정렬</h2>
+    <p class="oneliner">"먼저 해야 하는 것"이 항상 앞에 오도록 줄을 세우는 방법. 조건이 다 풀린 것부터 하나씩 꺼내요.</p>
+  </div>
+  <div class="trio">
+    <div class="card"><span class="tag t1">쉬운 비유</span><p>수강신청의 선수과목. "자료구조"를 들어야 "알고리즘"을 들을 수 있죠. 남은 선수과목이 없는 과목만 지금 들을 수 있어요.</p></div>
+    <div class="card"><span class="tag t2">왜 필요해?</span><ul><li>Mini Git <code>LOG</code>: 부모가 자식보다 항상 먼저</li><li>시간순은 시계가 틀리면 깨지지만, 이건 관계로 정해서 안 깨져요</li></ul></div>
+    <div class="card"><span class="tag t3">특징</span><ul><li><b>진입 차수</b> = 먼저 나와야 할 것의 개수</li><li>진입 차수 0인 것만 꺼냄 (Kahn 알고리즘)</li><li>사이클이 있으면 불가능, 시간 <code>O(V+E)</code></li></ul></div>
+  </div>
+  <div class="stepper" data-stepper="topo"></div>
+  <p class="note"><b>이 그림의 화살표 = "이게 먼저"</b> (부모 → 자식). 조상 탐색 그림과 방향이 반대예요. 같은 그래프를 어느 쪽에서 보느냐의 차이예요.</p>
+  <details class="code"><summary>파이썬 코드 보기 <span>Mini Git: graph.py · topological_order()</span></summary>
+<pre><span class="kw">def</span> topological_order(nodes, parents_of, children_of):
+    indegree = {n: len(parents_of(n)) <span class="kw">for</span> n <span class="kw">in</span> nodes}  <span class="cm"># 부모 수</span>
+    queue = deque(n <span class="kw">for</span> n <span class="kw">in</span> nodes <span class="kw">if</span> indegree[n] == 0)
+    order = []
+    <span class="kw">while</span> queue:
+        node = queue.popleft()
+        order.append(node)
+        <span class="kw">for</span> child <span class="kw">in</span> children_of(node):
+            indegree[child] -= 1
+            <span class="kw">if</span> indegree[child] == 0:     <span class="cm"># 조건이 다 풀렸다</span>
+                queue.append(child)
+    <span class="kw">if</span> len(order) != len(indegree):
+        <span class="kw">raise</span> ValueError(<span class="kw">"cycle detected"</span>)
+    <span class="kw">return</span> order</pre></details>
+  <a class="more" href="https://github.com/codewhite7777/codyssey_b5-2/blob/main/CONCEPTS.md#topo">글로 자세히 읽기 →</a>
+</section>
+
+<!-- 11 병합 정렬 -->
+<section id="mergesort">
+  <div class="sec-head">
+    <p class="eyebrow">11 · 알고리즘</p>
+    <h2>병합 정렬</h2>
+    <p class="oneliner">반으로 계속 쪼개 1개씩 만든 다음, 정렬된 두 줄을 맨 앞끼리 비교하며 하나로 합쳐 올라가는 방법.</p>
+  </div>
+  <div class="trio">
+    <div class="card"><span class="tag t1">쉬운 비유</span><p>시험지 묶음을 이름순으로 정리할 때 둘로 나눠 두 사람이 각자 정리해요. 그다음 두 묶음의 <b>맨 위 장끼리만</b> 비교해서 앞인 것을 내려놓으면 금방 합쳐져요.</p></div>
+    <div class="card"><span class="tag t2">왜 필요해?</span><ul><li>과제가 <code>sorted()</code>, <code>.sort()</code>를 금지해요</li><li>입력이 어떻든 항상 빠름 (최악도 O(n log n))</li><li><b>안정 정렬</b>: 같은 작성자 커밋은 만든 순서 유지</li></ul></div>
+    <div class="card"><span class="tag t3">특징</span><ul><li>분할 정복 + 재귀</li><li>평균·최악 <code>O(n log n)</code>, 메모리 <code>O(n)</code></li><li>값이 같으면 왼쪽 먼저 → 안정</li></ul></div>
+  </div>
+  <div class="stepper" data-stepper="mergesort"></div>
+  <p class="note"><b>흔한 실수:</b> 값이 같을 때 오른쪽을 먼저 넣으면 안정성이 깨져요. 27과 27′(값은 같고 원소는 다름)이 끝까지 순서를 지키는지 보세요. 실제 코드는 왼쪽 절반을 끝까지 먼저 처리하지만, 그림은 보기 쉽게 층별로 보여 줘요.</p>
+  <details class="code"><summary>파이썬 코드 보기 <span>Mini Git: sorting.py · merge_sort()</span></summary>
+<pre><span class="kw">def</span> merge_sort(items, key):
+    <span class="kw">if</span> len(items) &lt;= 1:
+        <span class="kw">return</span> list(items)            <span class="cm"># 1개는 이미 정렬됨</span>
+    mid = len(items) // 2
+    left = merge_sort(items[:mid], key)
+    right = merge_sort(items[mid:], key)
+    <span class="kw">return</span> _merge(left, right, key)
+
+<span class="kw">def</span> _merge(left, right, key):
+    result, i, j = [], 0, 0
+    <span class="kw">while</span> i &lt; len(left) <span class="kw">and</span> j &lt; len(right):
+        <span class="kw">if</span> key(right[j]) &lt; key(left[i]):   <span class="cm"># 오른쪽이 "더 작을 때만"</span>
+            result.append(right[j]); j += 1
+        <span class="kw">else</span>:                               <span class="cm"># 같으면 왼쪽 먼저 → 안정</span>
+            result.append(left[i]); i += 1
+    <span class="kw">return</span> result + left[i:] + right[j:]</pre></details>
+  <a class="more" href="https://github.com/codewhite7777/codyssey_b5-2/blob/main/CONCEPTS.md#mergesort">글로 자세히 읽기 →</a>
+</section>
+
+<!-- 12 역색인 -->
+<section id="index">
+  <div class="sec-head">
+    <p class="eyebrow">12 · 자료구조 · 검색</p>
+    <h2>역색인 (Inverted Index)</h2>
+    <p class="oneliner">"단어 → 그 단어가 나오는 커밋 목록"을 커밋할 때 미리 적어 두고, 검색할 때는 꺼내기만 하는 방법.</p>
+  </div>
+  <div class="trio">
+    <div class="card"><span class="tag t1">쉬운 비유</span><p>책 맨 뒤의 "찾아보기". '해시' 항목을 보면 몇 쪽에 나오는지 바로 알 수 있어서 책 전체를 넘겨 볼 필요가 없어요.</p></div>
+    <div class="card"><span class="tag t2">왜 필요해?</span><ul><li>과제 요구: 검색할 때 모든 커밋을 훑지 말 것</li><li><code>SEARCH &lt;단어&gt;</code>, <code>SEARCH --author=</code></li></ul></div>
+    <div class="card"><span class="tag t3">특징</span><ul><li>키워드 = 공백으로 나누고(split) 소문자로(lower)</li><li>검색 O(1) + 결과 수 / 순회 검색 O(N × 메시지 길이)</li><li>대신 커밋할 때 조금 일을 더 함</li></ul></div>
+  </div>
+  <div class="stepper" data-stepper="index"></div>
+  <a class="more" href="https://github.com/codewhite7777/codyssey_b5-2/blob/main/CONCEPTS.md#index">글로 자세히 읽기 →</a>
+</section>
+
+<footer>
+  <p>Codyssey B5-2 Mini Git 학습용 페이지 · 모든 그림은 이 페이지 안에서 직접 그려요(외부 이미지 없음). 레포: <a href="https://github.com/codewhite7777/codyssey_b5-2">codewhite7777/codyssey_b5-2</a></p>
+</footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var R = 22, NS = "http://www.w3.org/2000/svg", uidN = 0;
+  if (/capture/.test(location.search)) document.documentElement.classList.add("capture");
+
+  function ekey(a, b) { return a < b ? a + "|" + b : b + "|" + a; }
+  function mk(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function tw(s, size) {
+    var w = 0;
+    for (var i = 0; i < s.length; i++) w += s.charCodeAt(i) > 0x2e80 ? size * 1.0 : size * 0.62;
+    return w;
+  }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function rect(x, y, w, h, cls, rx) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (rx == null ? 8 : rx) + '" class="' + cls + '"/>'; }
+  function txt(x, y, s, cls, anchor) { return '<text x="' + x + '" y="' + y + '" class="' + cls + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>' + esc(s) + '</text>'; }
+  function adjOf(spec) {
+    var adj = {};
+    Object.keys(spec.nodes).forEach(function (id) { adj[id] = []; });
+    spec.edges.forEach(function (e) {
+      if (spec.hidden && spec.hidden.indexOf(ekey(e[0], e[1])) >= 0) return;
+      adj[e[0]].push(e[1]);
+      if (!spec.directed) adj[e[1]].push(e[0]);
+    });
+    return adj;
+  }
+
+  /* ================= 그래프 뷰: 요소는 한 번 만들고 단계마다 class만 바꿔서 색이 부드럽게 변함 ================= */
+  function GraphView(spec) {
+    return {
+      setup: function (svg, uid) {
+        var defs = mk("defs", {}, svg);
+        ["base", "hl", "bad"].forEach(function (k) {
+          var m = mk("marker", { id: "ar-" + k + "-" + uid, viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: k === "base" ? "8" : "6", markerHeight: k === "base" ? "8" : "6", orient: "auto-start-reverse" }, defs);
+          mk("path", { d: "M0,0L10,5L0,10z", "class": "ah-" + k }, m);
+        });
+        var gE = mk("g", {}, svg), gN = mk("g", {}, svg), gT = mk("g", {}, svg);
+        var edges = spec.edges.map(function (e) {
+          var A = spec.nodes[e[0]], B = spec.nodes[e[1]];
+          var dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy);
+          return { key: ekey(e[0], e[1]), line: mk("line", {}, gE), A: A, B: B, ux: dx / L, uy: dy / L };
+        });
+        var nodes = {};
+        Object.keys(spec.nodes).forEach(function (id) {
+          var n = spec.nodes[id];
+          var g = mk("g", {}, gN);
+          mk("circle", { cx: n.x, cy: n.y, r: R }, g);
+          var t = mk("text", { x: n.x, y: n.y, "class": "nlabel" }, g);
+          var bg = mk("g", { "class": "badge-g" }, g);
+          var br = mk("rect", { "class": "badge-bg", height: 20, rx: 10 }, bg);
+          var bt = mk("text", { "class": "badge" }, bg);
+          nodes[id] = { n: n, g: g, t: t, bg: bg, br: br, bt: bt, label: n.label || id };
+        });
+        return { edges: edges, nodes: nodes, gT: gT, uid: uid };
+      },
+      update: function (ctx, fr) {
+        var directed = fr.directed !== undefined ? fr.directed : spec.directed;
+        var pad = directed ? 4 : 0;
+        function inList(name, key) { return fr[name] && fr[name].indexOf(key) >= 0; }
+        ctx.edges.forEach(function (E) {
+          var cls = (fr.e && fr.e[E.key]) ||
+            (inList("bad", E.key) ? "bad" : inList("hl", E.key) ? "hl" : inList("tree", E.key) ? "tree" : inList("edim", E.key) ? "dim" :
+            (spec.hidden && spec.hidden.indexOf(E.key) >= 0 ? "hidden" : (fr.edgeDefault || "base")));
+          E.line.setAttribute("x1", E.A.x + E.ux * R);
+          E.line.setAttribute("y1", E.A.y + E.uy * R);
+          E.line.setAttribute("x2", E.B.x - E.ux * (R + pad));
+          E.line.setAttribute("y2", E.B.y - E.uy * (R + pad));
+          E.line.setAttribute("class", "edge e-" + cls);
+          if (directed && cls !== "hidden") E.line.setAttribute("marker-end", "url(#ar-" + (cls === "hl" ? "hl" : cls === "bad" ? "bad" : "base") + "-" + ctx.uid + ")");
+          else E.line.removeAttribute("marker-end");
+        });
+        Object.keys(ctx.nodes).forEach(function (id) {
+          var N = ctx.nodes[id];
+          var st = (fr.st && fr.st[id]) || fr.nodeDefault || spec.nodeDefault || "idle";
+          N.g.setAttribute("class", "gnode s-" + st);
+          N.t.textContent = fr.label && id in fr.label ? fr.label[id] : N.label;
+          var b = fr.badge && fr.badge[id];
+          if (b) {
+            var w = tw(b, 12) + 16, below = spec.badgeBelow && spec.badgeBelow.indexOf(id) >= 0;
+            var by = below ? N.n.y + R + 15 : N.n.y - R - 15;
+            N.br.setAttribute("x", N.n.x - w / 2); N.br.setAttribute("y", by - 10); N.br.setAttribute("width", w);
+            N.bt.setAttribute("x", N.n.x); N.bt.setAttribute("y", by); N.bt.textContent = b;
+            N.bg.setAttribute("class", "badge-g on");
+          } else {
+            N.bg.setAttribute("class", "badge-g");
+          }
+        });
+        while (ctx.gT.firstChild) ctx.gT.removeChild(ctx.gT.firstChild);
+        if (fr.tags) Object.keys(fr.tags).forEach(function (id) {
+          var n = spec.nodes[id], below = spec.tagBelow && spec.tagBelow.indexOf(id) >= 0;
+          fr.tags[id].forEach(function (tg, i) {
+            var w = tw(tg[0], 12) + 20, cy = below ? n.y + R + 17 + i * 25 : n.y - R - 17 - i * 25;
+            mk("rect", { x: n.x - w / 2, y: cy - 11, width: w, height: 22, rx: 11, "class": "tagbox tag-" + tg[1] }, ctx.gT);
+            var t = mk("text", { x: n.x, y: cy, "class": "tagtext tagtext-" + tg[1] }, ctx.gT);
+            t.textContent = tg[0];
+          });
+        });
+      }
+    };
+  }
+
+  /* ================= 스테퍼 공통 ================= */
+  function makeStepper(root, cfg) {
+    var uid = "s" + (uidN++);
+    var legend = cfg.legend.map(function (l) { return '<span><i class="lg-' + l[0] + '"></i>' + l[1] + '</span>'; }).join("");
+    root.innerHTML =
+      '<div class="st-top">' +
+        '<div class="stage" title="클릭하면 다음 단계"><svg' + (cfg.viewBox[0] > 600 ? ' class="wide"' : '') + ' viewBox="0 0 ' + cfg.viewBox[0] + ' ' + cfg.viewBox[1] + '" role="img" aria-label="' + cfg.label + '"></svg><span class="hint">클릭 ▶</span></div>' +
+        '<div class="side"><p class="say" aria-live="polite"></p><div class="panels"></div></div>' +
+      '</div>' +
+      '<div class="bar"><i></i></div>' +
+      '<div class="controls">' +
+        '<button type="button" data-a="first" id="' + cfg.id + '-first">처음</button>' +
+        '<button type="button" data-a="prev" id="' + cfg.id + '-prev">◀ 이전</button>' +
+        '<button type="button" data-a="next" class="primary" id="' + cfg.id + '-next">다음 ▶</button>' +
+        '<button type="button" data-a="play" id="' + cfg.id + '-play">자동 재생</button>' +
+        '<span class="count"></span>' +
+      '</div>' +
+      '<div class="legend">' + legend + '</div>';
+    root.tabIndex = 0;
+    root.setAttribute("aria-label", cfg.label + " (← → 키로 이동)");
+    var svg = root.querySelector("svg"), say = root.querySelector(".say"), panels = root.querySelector(".panels");
+    var count = root.querySelector(".count"), bar = root.querySelector(".bar > i"), hint = root.querySelector(".hint");
+    var bFirst = root.querySelector('[data-a="first"]'), bPrev = root.querySelector('[data-a="prev"]');
+    var bNext = root.querySelector('[data-a="next"]'), bPlay = root.querySelector('[data-a="play"]');
+    var frames = cfg.frames, i = 0, timer = null;
+    var ctx = cfg.view.setup ? cfg.view.setup(svg, uid) : null;
+
+    function draw() {
+      var fr = frames[i];
+      if (cfg.view.update) cfg.view.update(ctx, fr); else svg.innerHTML = cfg.view.render(fr, uid);
+      say.innerHTML = fr.say;
+      panels.innerHTML = (fr.panels || []).map(function (p) {
+        var items = p.items.length
+          ? p.items.map(function (t) { return '<span class="item ' + (p.kind || "plain") + '">' + esc(t) + '</span>'; }).join("")
+          : '<span class="empty">비어 있음</span>';
+        return '<div class="panel"><span class="panel-label">' + p.label + '</span><div class="items">' + items + '</div></div>';
+      }).join("");
+      count.textContent = (i + 1) + " / " + frames.length;
+      bar.style.width = ((i + 1) / frames.length * 100) + "%";
+      bFirst.disabled = bPrev.disabled = i === 0;
+      bNext.disabled = i === frames.length - 1;
+      hint.textContent = i === frames.length - 1 ? "클릭 = 처음으로" : "클릭 ▶";
+    }
+    function stop() { if (timer) { clearInterval(timer); timer = null; } bPlay.textContent = "자동 재생"; }
+    function go(n) { i = Math.max(0, Math.min(frames.length - 1, n)); draw(); }
+    root.querySelector(".controls").addEventListener("click", function (ev) {
+      var a = ev.target.getAttribute && ev.target.getAttribute("data-a");
+      if (!a) return;
+      if (a === "first") { stop(); go(0); }
+      else if (a === "prev") { stop(); go(i - 1); }
+      else if (a === "next") { stop(); go(i + 1); }
+      else if (a === "play") {
+        if (timer) { stop(); return; }
+        if (i === frames.length - 1) go(0);
+        bPlay.textContent = "멈춤";
+        timer = setInterval(function () {
+          if (i >= frames.length - 1) { stop(); return; }
+          go(i + 1);
+        }, 1800);
+      }
+    });
+    root.querySelector(".stage").addEventListener("click", function () {
+      stop();
+      go(i === frames.length - 1 ? 0 : i + 1);
+      root.focus({ preventScroll: true });
+    });
+    root.addEventListener("keydown", function (ev) {
+      if (ev.target.tagName === "BUTTON") return;
+      if (ev.key === "ArrowRight" || ev.key === " ") { ev.preventDefault(); stop(); go(i + 1); }
+      else if (ev.key === "ArrowLeft") { ev.preventDefault(); stop(); go(i - 1); }
+      else if (ev.key === "Home") { ev.preventDefault(); stop(); go(0); }
+      else if (ev.key === "End") { ev.preventDefault(); stop(); go(frames.length - 1); }
+    });
+    draw();
+  }
+
+  /* ================= 01 그래프 ================= */
+  var graphSpec = {
+    directed: false,
+    nodes: { A: { x: 80, y: 150 }, B: { x: 215, y: 70 }, C: { x: 215, y: 230 }, D: { x: 350, y: 150 } },
+    edges: [["B", "A"], ["C", "A"], ["D", "B"], ["D", "C"]]
+  };
+  function graphFrames() {
+    var all = ["A", "B", "C", "D"], hideAll = {};
+    graphSpec.edges.forEach(function (e) { hideAll[ekey(e[0], e[1])] = "hidden"; });
+    function st(map) { var o = {}; all.forEach(function (k) { o[k] = map[k] || "idle"; }); return o; }
+    return [
+      { st: st({ A: "cur", B: "cur", C: "cur", D: "cur" }), e: hideAll,
+        say: '<b>점(노드)</b> 4개예요. 그래프에서 점은 "대상 하나"를 뜻해요. Mini Git에서는 <b>커밋 하나 = 점 하나</b>.',
+        panels: [{ label: "점 목록", items: all, kind: "wait" }] },
+      { st: st({}), say: '점과 점을 <b>선(간선)</b>으로 이어요. 선은 "둘이 관계가 있다"는 뜻이에요. Mini Git에서는 <b>부모-자식 관계</b>가 선이에요.',
+        panels: [{ label: "선 목록", items: ["A-B", "A-C", "B-D", "C-D"], kind: "plain" }] },
+      { st: st({ A: "cur", B: "wait", C: "wait" }), hl: [ekey("A", "B"), ekey("A", "C")],
+        say: 'A와 선 하나로 바로 이어진 점을 A의 <b>이웃</b>이라고 해요. A의 이웃은 B, C. D는 선 두 개를 건너야 해서 이웃이 아니에요.',
+        panels: [{ label: "A의 이웃", items: ["B", "C"], kind: "wait" }] },
+      { st: st({}), say: '코드에서는 점마다 <b>이웃 목록</b>을 딕셔너리에 저장해요. 이걸 <b>인접 리스트</b>라고 불러요. <code>graph["A"]</code> 한 번이면 A의 이웃이 나와요.',
+        panels: [{ label: "graph (인접 리스트)", items: ["A: [B, C]", "B: [A, D]", "C: [A, D]", "D: [B, C]"], kind: "plain" }] },
+      { directed: true, st: st({ D: "cur", B: "wait", C: "wait" }), hl: [ekey("D", "B"), ekey("D", "C")],
+        say: '선에 <b>화살표(방향)</b>가 생기면 <b>방향 그래프</b>예요. 여기서 화살표는 "내 부모는 저쪽". D의 부모는 B와 C예요. 화살표 방향으로만 갈 수 있어요.',
+        panels: [{ label: "D → 부모", items: ["B", "C"], kind: "wait" }] },
+      { directed: true, st: st({}),
+        say: 'Mini Git은 목록을 <b>두 개</b> 둬요. <b>parents</b>(위로 = 과거로)와 <b>children</b>(아래로 = 미래로). 이 둘만 있으면 LOG, PATH, ANCESTORS를 모두 할 수 있어요.',
+        panels: [{ label: "parents (부모 목록)", items: ["A: -", "B: [A]", "C: [A]", "D: [B, C]"], kind: "plain" },
+                 { label: "children (자식 목록)", items: ["A: [B, C]", "B: [D]", "C: [D]", "D: -"], kind: "plain" }] }
+    ];
+  }
+
+  /* ================= 02 트리 · 커밋 트리 ================= */
+  var treeSpec = {
+    directed: true,
+    nodes: { C1: { x: 75, y: 165 }, C2: { x: 210, y: 92 }, C3: { x: 210, y: 238 }, C4: { x: 345, y: 238 }, M: { x: 455, y: 165 } },
+    edges: [["C2", "C1"], ["C3", "C1"], ["C4", "C3"], ["M", "C2"], ["M", "C4"]],
+    hidden: [ekey("M", "C2"), ekey("M", "C4")],
+    tagBelow: ["C3", "C4"], badgeBelow: ["C3", "C4"]
+  };
+  function treeFrames() {
+    var ids = ["C1", "C2", "C3", "C4", "M"], cmds = [];
+    function st(shown, cur, extra) {
+      var o = {};
+      ids.forEach(function (k) { o[k] = k === cur ? "cur" : shown.indexOf(k) >= 0 ? "done" : "hidden"; });
+      for (var k in extra || {}) o[k] = extra[k];
+      return o;
+    }
+    function E(list) { var e = {}; list.forEach(function (p) { e[ekey(p[0], p[1])] = p[2] || "base"; }); return e; }
+    var C1C2 = ["C2", "C1"], C1C3 = ["C3", "C1"], C3C4 = ["C4", "C3"];
+    var hideAll = E([["C2", "C1", "hidden"], ["C3", "C1", "hidden"], ["C4", "C3", "hidden"]]);
+    function cmd(c) { cmds.push(c); return cmds.slice(); }
+    function head(b) { return ["HEAD → " + b, "head"]; }
+    function br(b) { return [b, "branch"]; }
+    return [
+      { st: st([], null, { C1: "ghost" }), label: { C1: "" }, e: hideAll, tags: { C1: [head("main")] },
+        say: '<b>INIT Alice</b>: 저장소, <b>main</b> 브랜치, <b>HEAD</b>가 생겨요. 아직 커밋이 0개라서 main 이름표는 아무것도 가리키지 않아요(점선).',
+        panels: [{ label: "입력한 명령", items: cmd("INIT Alice"), kind: "plain" }, { label: "branches", items: ["main → 없음"], kind: "done" }] },
+      { st: st([], "C1"), e: hideAll, tags: { C1: [head("main")] },
+        say: '<b>COMMIT "Initial commit"</b>: 부모가 없는 첫 커밋 C1(356a192). 부모 없는 맨 처음 점을 <b>뿌리(root)</b>라고 해요. main 이름표가 C1을 가리켜요.',
+        panels: [{ label: "입력한 명령", items: cmd("COMMIT Initial"), kind: "plain" }, { label: "branches", items: ["main → C1"], kind: "done" }] },
+      { st: st(["C1"]), e: hideAll, tags: { C1: [head("main"), br("feature")] },
+        say: '<b>BRANCH feature</b>: 지금 HEAD 커밋(C1)을 가리키는 <b>이름표 하나</b>가 더 생겨요. 커밋은 늘지 않아요. 브랜치는 커밋이 아니라 이름표예요.',
+        panels: [{ label: "입력한 명령", items: cmd("BRANCH feature"), kind: "plain" }, { label: "branches", items: ["main → C1", "feature → C1"], kind: "done" }] },
+      { st: st(["C1"]), e: hideAll, tags: { C1: [head("feature"), br("main")] },
+        say: '<b>SWITCH feature</b>: HEAD가 feature로 옮겨 가요. HEAD = "지금 내가 서 있는 브랜치". 다음 커밋은 feature 쪽에 쌓여요.',
+        panels: [{ label: "입력한 명령", items: cmd("SWITCH feature"), kind: "plain" }, { label: "branches", items: ["main → C1", "feature → C1"], kind: "done" }] },
+      { st: st(["C1"], "C2"), e: E([[C1C2[0], C1C2[1], "hl"], ["C3", "C1", "hidden"], ["C4", "C3", "hidden"]]), tags: { C1: [br("main")], C2: [head("feature")] },
+        say: '<b>COMMIT "Add login"</b>: 새 커밋 C2의 부모 = HEAD가 가리키던 C1. <b>feature 이름표만</b> C2로 한 칸 전진하고 main은 그대로예요.',
+        panels: [{ label: "입력한 명령", items: cmd("COMMIT Add login"), kind: "plain" }, { label: "branches", items: ["main → C1", "feature → C2"], kind: "done" }] },
+      { st: st(["C1", "C2"]), e: E([C1C2, ["C3", "C1", "hidden"], ["C4", "C3", "hidden"]]), tags: { C1: [head("main")], C2: [br("feature")] },
+        say: '<b>SWITCH main</b>: HEAD가 다시 main(= C1)으로. 커밋은 그대로고 HEAD만 움직였어요.',
+        panels: [{ label: "입력한 명령", items: cmd("SWITCH main"), kind: "plain" }, { label: "branches", items: ["main → C1", "feature → C2"], kind: "done" }] },
+      { st: st(["C1", "C2"], "C3"), e: E([C1C2, [C1C3[0], C1C3[1], "hl"], ["C4", "C3", "hidden"]]), tags: { C2: [br("feature")], C3: [head("main")] },
+        say: '<b>COMMIT "Add payment"</b>: C3의 부모도 C1. 한 부모에서 <b>가지가 두 개로 갈라졌어요</b>. 이게 브랜치가 갈라지는 모습이에요.',
+        panels: [{ label: "입력한 명령", items: cmd("COMMIT Add payment"), kind: "plain" }, { label: "branches", items: ["main → C3", "feature → C2"], kind: "done" }] },
+      { st: st(["C1", "C2", "C3"], "C4"), e: E([C1C2, C1C3, [C3C4[0], C3C4[1], "hl"]]), tags: { C2: [br("feature")], C4: [head("main")] },
+        say: '<b>COMMIT "Fix login bug"</b>: C4의 부모는 C3. main 가지가 한 칸 더 자랐어요.',
+        panels: [{ label: "입력한 명령", items: cmd("COMMIT Fix bug"), kind: "plain" }, { label: "branches", items: ["main → C4", "feature → C2"], kind: "done" }] },
+      { st: st(["C3"], null, { C1: "path", C2: "wait", C4: "wait" }), e: E([C1C2, C1C3, C3C4]),
+        badge: { C1: "뿌리(root)", C2: "잎(leaf)", C3: "가지", C4: "잎(leaf)" },
+        say: '<b>트리 용어</b>: 맨 위 조상 = <b>뿌리(root)</b>, 자식이 없는 끝 = <b>잎(leaf)</b>. 뿌리만 부모가 0개, 나머지는 부모가 <b>딱 1개</b>라서 이 그래프는 <b>트리</b>예요.',
+        panels: [{ label: "각 커밋의 부모 수", items: ["C1: 0", "C2: 1", "C3: 1", "C4: 1"], kind: "plain" }] },
+      { st: st(["C1", "C2", "C3", "C4"]), e: E([C1C2, C1C3, C3C4]),
+        badge: { C1: "깊이 0", C2: "깊이 1", C3: "깊이 1", C4: "깊이 2" },
+        say: '<b>깊이</b> = 뿌리에서 몇 칸 내려왔나. 트리에서는 <b>조상 수 = 깊이</b>예요. C4의 조상은 C3, C1 두 개 = 깊이 2.',
+        panels: [{ label: "ANCESTORS C4", items: ["C3", "C1"], kind: "done" }] },
+      { st: st(["C1", "C2", "C3", "C4"], null, { M: "ghost" }), e: E([C1C2, C1C3, C3C4, ["M", "C2", "ghost"], ["M", "C4", "ghost"]]),
+        badge: { M: "부모 2개" },
+        say: '만약 <b>merge</b>(보너스, 이번엔 미구현)를 하면 부모가 <b>2개</b>인 커밋 M이 생겨요. 그러면 더 이상 트리가 아니고 <b>DAG</b>가 돼요. 그래서 코드는 처음부터 <code>parents</code>를 목록으로 만들어 둬요.',
+        panels: [{ label: "M.parents", items: ["C2", "C4"], kind: "wait" }] }
+    ];
+  }
+
+  /* ================= 03 DAG와 사이클 ================= */
+  var dagSpec = {
+    directed: true,
+    nodes: { A: { x: 75, y: 150 }, B: { x: 210, y: 68 }, C: { x: 210, y: 232 }, D: { x: 345, y: 150 } },
+    edges: [["A", "B"], ["A", "C"], ["B", "D"], ["C", "D"], ["D", "A"]],
+    hidden: [ekey("D", "A")],
+    badgeBelow: ["C", "A", "D"]
+  };
+  function dagFrames() {
+    var AB = ekey("A", "B"), AC = ekey("A", "C"), BD = ekey("B", "D"), CD = ekey("C", "D"), DA = ekey("D", "A");
+    var cyc = {}; cyc[AB] = "bad"; cyc[BD] = "bad"; cyc[DA] = "bad";
+    return [
+      { badge: { A: "진입 0", B: "진입 1", C: "진입 1", D: "진입 2" },
+        say: '화살표 = "이게 먼저". 어느 점에서 출발해 화살표를 따라가도 <b>출발점으로 돌아오지 않아요</b>. 이런 그래프가 <b>DAG</b>예요. (진입 = 나보다 먼저인 것의 수)',
+        panels: [{ label: "진입 차수 0 (먼저 시작할 수 있음)", items: ["A"], kind: "wait" }] },
+      { st: { A: "path", B: "path", D: "path" }, hl: [AB, BD],
+        say: 'A → B → D 로 따라가 보면 D에서 더 갈 곳이 없어서 <b>끝나요</b>. DAG에서는 어떤 길이든 언젠가 끝이 있어요.',
+        panels: [{ label: "따라간 길", items: ["A", "B", "D", "(끝)"], kind: "accent" }] },
+      { st: { A: "bad", B: "bad", D: "bad" }, e: cyc,
+        say: '누군가 <b>D → A</b> 화살표를 추가했다고 해 봐요. A → B → D → A → B → … <b>제자리로 돌아오는 고리</b>가 생겼어요. 이게 <b>사이클</b>이에요.',
+        panels: [{ label: "끝없이 도는 길", items: ["A", "B", "D", "A", "B", "…"], kind: "bad" }] },
+      { st: { A: "bad", B: "bad", C: "wait", D: "bad" }, e: cyc, badge: { A: "진입 1", B: "진입 1", C: "진입 1", D: "진입 2" },
+        say: '위상 정렬(LOG)을 해 보면: 진입 차수가 0인 점이 <b>하나도 없어요</b>. 모두가 "내 앞 사람 먼저"를 기다리니 <b>아무도 먼저 출력될 수 없어요</b>.',
+        panels: [{ label: "진입 차수 0 (먼저 시작할 수 있음)", items: [], kind: "wait" }] },
+      { st: { A: "bad", B: "bad", D: "bad" }, e: cyc,
+        say: '조상 찾기도 고장 나요. D의 조상을 거꾸로 따라가면 B → A → D → B → … visited가 없으면 <b>영원히 돌고</b>, "D가 D의 조상"이라는 말도 안 되는 결과가 나와요.',
+        panels: [{ label: "D의 조상?", items: ["B", "A", "D (자기 자신!)"], kind: "bad" }] },
+      { nodeDefault: "done",
+        say: 'Mini Git에서는 사이클이 <b>생길 수 없어요</b>. 새 커밋은 항상 <b>이미 있는</b> 커밋(HEAD) 뒤에만 붙어서, 나중 것 → 먼저 것으로 거꾸로 가는 화살표(D → A 같은)를 만들 방법이 없거든요. 그래도 코드는 사이클을 발견하면 에러를 내도록 안전장치를 뒀어요.',
+        panels: [{ label: "LOG 순서", items: ["A", "B", "C", "D"], kind: "done" }] }
+    ];
+  }
+
+  /* ================= 04 해시맵 ================= */
+  var HM = ["356a192", "da4b923", "77de68d", "1b64538", "ac3478d", "c1dfd96"];
+  function bucketOf(h) { return parseInt(h[0], 16) % 8; }
+  function hashFrames() {
+    var target = "1b64538";
+    var f = [];
+    f.push({ list: [], say: '같은 커밋 hash 6개를 <b>리스트</b>와 <b>해시맵</b> 두 가지로 저장했어요. 찾을 것: <b>' + target + '</b>.',
+      panels: [{ label: "찾을 hash", items: [target], kind: "accent" }] });
+    for (var i = 0; i < 4; i++) {
+      var ls = [];
+      for (var j = 0; j <= i; j++) ls.push(j === 3 ? "yes" : "no");
+      f.push({ list: ls,
+        say: i < 3 ? '리스트는 <b>앞에서부터 하나씩</b> 비교해요. [' + i + '] ' + HM[i] + ' → 아니에요.'
+                   : '[3]에서 찾았어요! 비교 <b>4번</b>. 커밋이 N개면 최악에 N번 비교 → <b>O(N)</b>. 커밋이 100만 개면 100만 번일 수도 있어요.',
+        panels: [{ label: "비교 횟수", items: [String(i + 1) + "번"], kind: i < 3 ? "wait" : "done" }] });
+    }
+    f.push({ list: [], bucket: { idx: 1, cls: "b-calc" },
+      say: '해시맵은 hash로 <b>칸 번호를 계산</b>해요. 그림은 쉽게 "첫 글자 % 8"로 계산해요(실제 파이썬은 더 복잡하게 계산). 1b64538 → 첫 글자 1 → 1 % 8 = <b>칸 1</b>.',
+      panels: [{ label: "칸 번호 계산", items: ["'1' → 1", "1 % 8 = 1"], kind: "wait" }] });
+    f.push({ list: [], bucket: { idx: 1, cls: "b-hit" },
+      say: '<b>칸 1로 바로 가서</b> 확인 → 찾았어요! 비교 <b>1번</b>. 커밋이 100만 개여도 계산 1번 + 확인 1번 → <b>O(1)</b>. Mini Git의 <code>commits[hash]</code>가 이 방식이에요.',
+      panels: [{ label: "비교 횟수", items: ["1번"], kind: "done" }] });
+    f.push({ list: [], bucket: null,
+      say: '새 커밋 hash를 만들 때도 써요. 후보 hash가 <b>이미 있나?</b>를 이 O(1) 확인으로 검사하고(<code>candidate in self.commits</code>), 있으면 카운터를 올려 다시 만들어요. 그래서 hash가 <b>절대 겹치지 않아요</b>.',
+      panels: [{ label: "_new_hash() 순서", items: ["카운터 +1", "SHA-1 앞 7자리", "이미 있나? (O(1))", "없으면 확정"], kind: "plain" }] });
+    return f;
+  }
+  function renderHash(fr) {
+    var s = txt(20, 22, "리스트: 앞에서부터 하나씩", "t-title") + txt(380, 22, "해시맵: 칸 번호로 바로", "t-title");
+    HM.forEach(function (h, i) {
+      var st = fr.list[i], y = 44 + i * 42;
+      s += rect(20, y, 250, 34, st === "yes" ? "b-yes" : st === "no" ? "b-no" : "b-plain");
+      s += txt(36, y + 17, "[" + i + "]", "t-muted") + txt(80, y + 17, h, "t-mono");
+      if (st) s += txt(250, y + 17, st === "yes" ? "✓" : "✗", st === "yes" ? "t-yes" : "t-no", "end");
+    });
+    var byB = {}; HM.forEach(function (h) { byB[bucketOf(h)] = h; });
+    for (var b = 0; b < 8; b++) {
+      var y2 = 40 + b * 33, has = b in byB;
+      var cls = fr.bucket && fr.bucket.idx === b ? fr.bucket.cls : has ? "b-plain" : "b-empty";
+      s += txt(380, y2 + 14, "칸 " + b, "t-muted");
+      s += rect(428, y2, 190, 28, cls, 7);
+      s += has ? txt(444, y2 + 14, byB[b], "t-mono") : txt(444, y2 + 14, "(비어 있음)", "t-muted");
+    }
+    if (fr.bucket) {
+      var yb = 40 + fr.bucket.idx * 33 + 14;
+      s += '<path class="ln-acc" d="M 282 ' + yb + ' H 372" marker-end="url(#hm-ar)"/>';
+      s += txt(284, yb - 13, "칸 1로 바로", "t-accent");
+    }
+    return '<defs><marker id="hm-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" class="ah-hl"/></marker></defs>' + s;
+  }
+
+  /* ================= 05 큐 ================= */
+  function queueFrames() {
+    var steps = [
+      { q: [], code: "queue = deque()", say: '큐 = <b>줄 서기</b>. 오른쪽(뒤)으로 들어가서 왼쪽(앞)으로 나와요. 지금은 비어 있어요.' },
+      { q: ["A"], add: "A", code: "queue.append('A')", say: 'A가 줄 <b>맨 뒤</b>에 섰어요. 줄에 한 명뿐이니 A가 맨 앞이기도 해요.' },
+      { q: ["A", "B"], add: "B", code: "queue.append('B')", say: 'B는 A <b>뒤에</b> 서요.' },
+      { q: ["A", "B", "C"], add: "C", code: "queue.append('C')", say: 'C는 B 뒤에. 지금 줄: A, B, C.' },
+      { q: ["B", "C"], out: ["A"], code: "queue.popleft()  # → 'A'", say: '꺼낼 때는 <b>맨 앞</b>에서. 가장 먼저 들어온 A가 가장 먼저 나와요. 이걸 <b>FIFO</b>(First In, First Out)라고 해요.' },
+      { q: ["B", "C", "D"], out: ["A"], add: "D", code: "queue.append('D')", say: '새로 온 D는 다시 맨 뒤에. 앞에서 기다리던 B, C를 새치기하지 못해요.' },
+      { q: ["C", "D"], out: ["A", "B"], code: "queue.popleft()  # → 'B'", say: '다음으로 꺼내면 B. 들어온 순서(A, B, C, D) 그대로 나오고 있어요.' },
+      { q: ["C", "D"], out: ["A", "B"], code: "# 정리", say: 'BFS가 큐를 쓰는 이유: <b>먼저 발견한(가까운) 점을 먼저 처리</b>해야 가까운 순서가 지켜져요. 반대로 마지막에 넣은 걸 먼저 꺼내면 <b>스택</b>(LIFO, 접시 쌓기)이고 DFS가 써요. 파이썬 <code>list.pop(0)</code>은 느려서(O(n)) <code>deque.popleft()</code>(O(1))를 써요.' }
+    ];
+    return steps.map(function (s) {
+      return { q: s.q, add: s.add, out: s.out || [], justOut: s.code.indexOf("popleft") >= 0 ? s.out[s.out.length - 1] : null, say: s.say,
+        panels: [{ label: "실행한 코드", items: [s.code], kind: "accent" }, { label: "꺼낸 순서", items: s.out || [], kind: "done" }] };
+    });
+  }
+  function renderQueue(fr) {
+    var s = '<defs><marker id="q-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" class="ah-base"/></marker></defs>';
+    s += rect(140, 70, 380, 76, "b-tube", 14);
+    s += txt(150, 170, "앞 (꺼내는 곳)", "t-title") + txt(510, 170, "뒤 (넣는 곳)", "t-title", "end");
+    s += '<path class="ln" d="M 610 108 H 532" marker-end="url(#q-ar)"/>' + txt(612, 86, "append", "t-muted", "end");
+    s += '<path class="ln" d="M 132 108 H 92" marker-end="url(#q-ar)"/>' + txt(90, 86, "popleft", "t-muted");
+    fr.q.forEach(function (v, i) {
+      var x = 154 + i * 74;
+      s += '<g' + (v === fr.add ? ' class="pop"' : '') + '>' + rect(x, 82, 62, 52, "b-item", 10) + txt(x + 31, 108, v, "t-mono", "middle") + '</g>';
+    });
+    if (!fr.q.length) s += txt(330, 108, "(비어 있음)", "t-muted", "middle");
+    if (fr.justOut) s += '<g class="pop">' + rect(14, 82, 62, 52, "b-out", 10) + txt(45, 108, fr.justOut, "t-mono", "middle") + '</g>' + txt(45, 150, "나옴", "t-muted", "middle");
+    s += txt(20, 222, "꺼낸 순서:", "t-title");
+    fr.out.forEach(function (v, i) { s += rect(100 + i * 46, 206, 36, 32, "b-out", 7) + txt(118 + i * 46, 222, v, "t-mono", "middle"); });
+    return s;
+  }
+
+  /* ================= 06 BFS · 07 최단 경로 (같은 그래프) ================= */
+  var bfsSpec = {
+    directed: false,
+    nodes: { A: { x: 60, y: 167 }, B: { x: 175, y: 92 }, C: { x: 175, y: 247 }, D: { x: 295, y: 57 }, E: { x: 295, y: 167 }, F: { x: 295, y: 274 }, G: { x: 415, y: 167 }, H: { x: 525, y: 167 } },
+    edges: [["A", "B"], ["A", "C"], ["B", "D"], ["B", "E"], ["C", "E"], ["C", "F"], ["E", "G"], ["F", "G"], ["G", "H"]],
+    badgeBelow: ["F", "C"]
+  };
+  function bfsFrames() {
+    var adj = adjOf(bfsSpec), frames = [];
+    var visited = { A: true }, dist = { A: 0 }, q = ["A"], done = [], order = ["A"], used = [];
+    function snap(cur, say) {
+      var st = {}, badge = {};
+      Object.keys(bfsSpec.nodes).forEach(function (id) {
+        st[id] = id === cur ? "cur" : done.indexOf(id) >= 0 ? "done" : visited[id] ? "wait" : "idle";
+        if (id in dist) badge[id] = dist[id] === 0 ? "출발" : "거리 " + dist[id];
+      });
+      frames.push({ st: st, badge: badge, tree: used.slice(), say: say,
+        panels: [{ label: "큐 (앞 → 뒤)", items: q.slice(), kind: "wait" }, { label: "방문 표시한 점 (visited)", items: order.slice(), kind: "done" }] });
+    }
+    snap(null, '출발점 <b>A</b>를 큐에 넣고 "방문함" 표시를 해요. 큐는 <b>앞에서 꺼내고 뒤에 넣는</b> 줄이에요.');
+    while (q.length) {
+      var u = q.shift(), added = [], skipped = [];
+      adj[u].forEach(function (v) {
+        if (!visited[v]) { visited[v] = true; dist[v] = dist[u] + 1; q.push(v); order.push(v); added.push(v); used.push(ekey(u, v)); }
+        else skipped.push(v);
+      });
+      var say = '큐 맨 앞에서 <b>' + u + '</b> 꺼냄. ';
+      say += added.length ? '처음 보는 이웃 <b>' + added.join(", ") + '</b> → 큐 뒤에 넣고 방문 표시 (거리 ' + (dist[u] + 1) + ').' : '새로 넣을 이웃이 없어요.';
+      if (skipped.length) say += ' ' + skipped.join(", ") + ': 이미 방문해서 건너뜀.';
+      snap(u, say);
+      done.push(u);
+    }
+    snap(null, '큐가 비었으니 끝! 방문 순서 <b>' + order.join(" → ") + '</b>. 거리 0 → 1 → 2 → 3 → 4, 물결처럼 가까운 겹부터 나왔어요.');
+    return frames;
+  }
+  function pathFrames() {
+    var adj = adjOf(bfsSpec), frames = [], goal = "H";
+    var dist = { A: 0 }, prev = { A: null }, frontier = ["A"], tree = [];
+    function rec() { return Object.keys(dist).map(function (k) { return k + ":" + dist[k] + (prev[k] ? "←" + prev[k] : ""); }); }
+    function snap(stf, say, hl, path) {
+      var st = {}, badge = {};
+      Object.keys(bfsSpec.nodes).forEach(function (id) {
+        st[id] = stf(id);
+        if (id in dist) badge[id] = prev[id] ? dist[id] + " ← " + prev[id] : "출발";
+      });
+      var panels = [{ label: "기록  점:거리←누가 데려왔나", items: rec(), kind: "plain" }];
+      if (path) panels.push({ label: "경로 (거꾸로 따라가는 중)", items: path.slice(), kind: "accent" });
+      frames.push({ st: st, badge: badge, tree: tree.slice(), hl: hl || [], say: say, panels: panels });
+    }
+    snap(function (id) { return id === "A" ? "cur" : id === goal ? "dim" : "idle"; },
+      '출발 <b>A</b>(거리 0)에서 도착 <b>H</b>까지 가장 짧은 길을 찾아요. BFS를 돌리면서 각 점에 <b>거리</b>와 <b>누가 데려왔는지</b>를 적어요.');
+    var found = false;
+    while (frontier.length && !found) {
+      var next = [];
+      frontier.forEach(function (u) {
+        adj[u].forEach(function (v) { if (!(v in dist)) { dist[v] = dist[u] + 1; prev[v] = u; next.push(v); tree.push(ekey(u, v)); } });
+      });
+      if (!next.length) break;
+      found = next.indexOf(goal) >= 0;
+      var say = '거리 ' + dist[next[0]] + '인 점: <b>' + next.join(", ") + '</b>. ' + next.map(function (v) { return v + '←' + prev[v]; }).join(", ") + ' 처럼 데려온 점을 적어요.';
+      if (found) say += ' <b>H 발견!</b> 처음 닿은 순간이 가장 가까운 거리라서 더 볼 필요가 없어요.';
+      (function (nx) { snap(function (id) { return nx.indexOf(id) >= 0 ? "cur" : (id in dist) ? "done" : "idle"; }, say); })(next.slice());
+      frontier = next;
+    }
+    var path = [goal], x = goal, hl = [];
+    snap(function (id) { return id === goal ? "path" : (id in dist) ? "done" : "idle"; },
+      '이제 <b>H</b>에서 기록을 거꾸로 따라가요. H는 <b>' + prev[goal] + '</b>에게서 왔어요.', [], path);
+    while (prev[x]) {
+      hl.push(ekey(x, prev[x])); x = prev[x]; path.unshift(x);
+      (function (p, h, cx) {
+        var say = cx === "A" ? '출발점 <b>A</b> 도착! 경로 <b>' + p.join(" → ") + '</b>, ' + (p.length - 1) + '칸이 가장 짧은 길이에요.'
+                             : '<b>' + cx + '</b>는 <b>' + prev[cx] + '</b>에게서 왔어요. 계속 거꾸로.';
+        snap(function (id) { return p.indexOf(id) >= 0 ? "path" : (id in dist) ? "done" : "idle"; }, say, h.slice(), p.slice());
+      })(path.slice(), hl, x);
+    }
+    return frames;
+  }
+
+  /* ================= 08 PATH 사전순 (Mini Git 방식) ================= */
+  var lexSpec = {
+    directed: false,
+    nodes: { e5: { x: 60, y: 150 }, a2: { x: 205, y: 62 }, b7: { x: 205, y: 150 }, c3: { x: 160, y: 250 }, d9: { x: 300, y: 250 }, f0: { x: 380, y: 150 } },
+    edges: [["e5", "a2"], ["e5", "b7"], ["a2", "f0"], ["b7", "f0"], ["e5", "c3"], ["c3", "d9"], ["d9", "f0"]],
+    badgeBelow: ["c3", "d9", "b7"]
+  };
+  function lexFrames() {
+    var adj = adjOf(lexSpec), start = "e5", goal = "f0", dist = {}, frames = [];
+    var ids = Object.keys(lexSpec.nodes);
+    function badges() { var b = {}; ids.forEach(function (k) { if (k in dist) b[k] = "남은 " + dist[k]; }); return b; }
+    function base(over) { var o = {}; ids.forEach(function (k) { o[k] = (k in dist) ? "done" : "idle"; }); for (var k in over) o[k] = over[k]; return o; }
+    frames.push({ st: { e5: "cur", f0: "dim" },
+      say: '<b>PATH e5 f0</b>. 2칸짜리 길이 <b>두 개</b> 있어요: e5→a2→f0, e5→b7→f0. 규칙: 길이가 같으면 문자열이 <b>사전순으로 가장 작은</b> 경로.',
+      panels: [{ label: "후보 (둘 다 2칸)", items: ["e5->a2->f0", "e5->b7->f0"], kind: "plain" }] });
+    dist[goal] = 0;
+    var layer = [goal], d = 0;
+    frames.push({ st: base({ f0: "cur" }), badge: badges(),
+      say: '① 먼저 <b>도착점 f0</b>에서 BFS를 돌려 모든 점의 <b>"도착까지 남은 거리"</b>를 적어요. f0 = 0.',
+      panels: [{ label: "남은 거리 표", items: ["f0:0"], kind: "plain" }] });
+    while (layer.length) {
+      var next = [];
+      layer.forEach(function (u) { adj[u].forEach(function (v) { if (!(v in dist)) { dist[v] = d + 1; next.push(v); } }); });
+      if (!next.length) break;
+      d++;
+      var over = {}; next.forEach(function (v) { over[v] = "cur"; });
+      frames.push({ st: base(over), badge: badges(),
+        say: '남은 거리 ' + d + ': <b>' + next.join(", ") + '</b>.' + (next.indexOf(start) >= 0 ? ' 출발점 e5까지 거리가 정해졌어요(2칸). 이제 걸어갈 준비 끝.' : ''),
+        panels: [{ label: "남은 거리 표", items: Object.keys(dist).map(function (k) { return k + ":" + dist[k]; }), kind: "plain" }] });
+      layer = next;
+    }
+    var path = [start], node = start, hl = [];
+    while (node !== goal) {
+      var cands = adj[node].filter(function (v) { return dist[v] === dist[node] - 1; });
+      var best = cands.reduce(function (a, b) { return b < a ? b : a; });
+      var over2 = {}; path.forEach(function (p) { over2[p] = "path"; }); cands.forEach(function (c) { if (c !== best) over2[c] = "wait"; });
+      over2[best] = "path";
+      hl.push(ekey(node, best));
+      var say = '② <b>' + node + '</b>(남은 ' + dist[node] + ')에서 ';
+      say += cands.length > 1
+        ? '남은 거리가 ' + (dist[node] - 1) + '인 이웃은 <b>' + cands.join(", ") + '</b> 두 개. 그중 가장 작은 hash <b>' + best + '</b>로 가요.'
+        : '남은 거리가 ' + (dist[node] - 1) + '인 이웃은 <b>' + best + '</b> 하나뿐이라 그쪽으로 가요.';
+      if (best === goal) say += ' 도착!';
+      path.push(best);
+      frames.push({ st: base(over2), badge: badges(), hl: hl.slice(), say: say,
+        panels: [{ label: "후보 (남은 거리 " + (dist[node] - 1) + ")", items: cands, kind: "wait" }, { label: "경로", items: path.slice(), kind: "accent" }] });
+      node = best;
+    }
+    var fin = {}; path.forEach(function (p) { fin[p] = "path"; });
+    frames.push({ st: base(fin), badge: badges(), hl: hl.slice(),
+      say: '결과 <b>' + path.join(" -> ") + '</b>. "e5->a2->f0" < "e5->b7->f0" 이니까 정답이에요. hash 길이가 모두 같아서 <b>앞에서부터 한 칸씩 가장 작은 걸 고르면</b> 문자열 전체도 가장 작아져요.',
+      panels: [{ label: "Path", items: [path.join(" -> ")], kind: "accent" }] });
+    return frames;
+  }
+
+  /* ================= 09 조상 탐색 ================= */
+  var ancSpec = {
+    directed: true,
+    nodes: { C1: { x: 60, y: 165 }, C2: { x: 185, y: 95 }, C3: { x: 185, y: 240 }, C4: { x: 315, y: 165 }, C5: { x: 445, y: 165 }, C6: { x: 315, y: 40 } },
+    edges: [["C2", "C1"], ["C3", "C1"], ["C4", "C2"], ["C4", "C3"], ["C5", "C4"], ["C6", "C2"]],
+    badgeBelow: ["C3", "C4", "C5", "C1", "C6"]
+  };
+  function ancFrames() {
+    var parents = adjOf(ancSpec), frames = [], start = "C5";
+    var visited = { C5: true }, q = [start], done = [], found = [], used = [];
+    function snap(cur, say, final) {
+      var st = {}, badge = {};
+      Object.keys(ancSpec.nodes).forEach(function (id) {
+        st[id] = id === cur ? "cur" : id === start ? "path" : done.indexOf(id) >= 0 ? "done" : visited[id] ? "wait" : (final ? "dim" : "idle");
+        if (id === start) badge[id] = "출발";
+        var fi = found.indexOf(id); if (fi >= 0) badge[id] = "조상 " + (fi + 1);
+        if (final && !visited[id]) badge[id] = "조상 아님";
+      });
+      frames.push({ st: st, badge: badge, hl: used.slice(), say: say,
+        panels: [{ label: "큐 (앞 → 뒤)", items: q.slice(), kind: "wait" }, { label: "찾은 조상", items: found.slice(), kind: "done" }] });
+    }
+    snap(null, '<b>C5</b>의 조상을 찾아요. 화살표 = "내 부모는 저쪽". 이 방향으로만 갈 수 있어요. C4는 부모가 둘인 <b>merge 커밋</b>이에요(보너스 상황 예시).');
+    while (q.length) {
+      var u = q.shift(), added = [], skipped = [];
+      parents[u].forEach(function (p) {
+        if (!visited[p]) { visited[p] = true; q.push(p); found.push(p); added.push(p); used.push(ekey(u, p)); }
+        else skipped.push(p);
+      });
+      var say = '큐 맨 앞에서 <b>' + u + '</b> 꺼냄. ';
+      if (!parents[u].length) say += '부모가 없는 첫 커밋(root)이라 더 올라갈 곳이 없어요.';
+      else if (added.length) say += '부모 <b>' + added.join(", ") + '</b> 발견 → 큐에 넣어요.';
+      if (skipped.length) say += '부모 ' + skipped.join(", ") + ': <b>이미 방문</b>해서 건너뜀. 두 길로 만났는데 visited가 없었다면 두 번 나왔을 거예요.';
+      snap(u, say);
+      done.push(u);
+    }
+    snap(null, '끝! C5의 조상은 <b>' + found.join(", ") + '</b>. <b>C6</b>는 C2의 자식(형제 가지)이라 부모 방향으로는 절대 닿지 않아요.', true);
+    return frames;
+  }
+
+  /* ================= 10 위상 정렬 ================= */
+  var topoSpec = {
+    directed: true, nodes: ancSpec.nodes,
+    edges: [["C1", "C2"], ["C1", "C3"], ["C2", "C4"], ["C3", "C4"], ["C4", "C5"], ["C2", "C6"]],
+    badgeBelow: ancSpec.badgeBelow
+  };
+  function topoFrames() {
+    var children = adjOf(topoSpec), frames = [], ids = Object.keys(topoSpec.nodes);
+    var indeg = {}; ids.forEach(function (id) { indeg[id] = 0; });
+    topoSpec.edges.forEach(function (e) { indeg[e[1]]++; });
+    var q = ids.filter(function (id) { return indeg[id] === 0; }), out = [], used = [];
+    function snap(cur, say) {
+      var st = {}, badge = {};
+      ids.forEach(function (id) {
+        st[id] = id === cur ? "cur" : out.indexOf(id) >= 0 ? "done" : q.indexOf(id) >= 0 ? "wait" : "idle";
+        badge[id] = (out.indexOf(id) < 0 || id === cur) ? "진입 " + indeg[id] : (out.indexOf(id) + 1) + "번째";
+      });
+      frames.push({ st: st, badge: badge, tree: used.slice(), say: say,
+        panels: [{ label: "큐 (진입 차수 0 = 지금 꺼낼 수 있음)", items: q.slice(), kind: "wait" }, { label: "출력 순서 (LOG)", items: out.slice(), kind: "done" }] });
+    }
+    snap(null, '화살표 = "이게 먼저". 각 커밋의 <b>진입 차수</b>(먼저 나와야 할 부모 수)를 세요. C4는 부모가 둘이라 2. 0인 <b>C1</b>만 지금 꺼낼 수 있어요.');
+    while (q.length) {
+      var u = q.shift(); out.push(u);
+      var changes = [], ready = [], waiting = [];
+      children[u].forEach(function (c) {
+        indeg[c]--; used.push(ekey(u, c));
+        changes.push(c + ' ' + (indeg[c] + 1) + '→' + indeg[c]);
+        if (indeg[c] === 0) { q.push(c); ready.push(c); } else waiting.push(c);
+      });
+      var say = '<b>' + u + '</b> 꺼내서 출력. ';
+      say += changes.length ? '자식의 진입 차수를 1씩 줄여요: ' + changes.join(", ") + '. ' : '자식이 없어요. ';
+      if (ready.length) say += '0이 된 <b>' + ready.join(", ") + '</b> → 큐에 넣어요.';
+      if (waiting.length) say += ' <b>' + waiting.join(", ") + '</b>: 아직 남은 부모가 있어서 대기.';
+      snap(u, say);
+    }
+    snap(null, '끝! 출력 순서 <b>' + out.join(" → ") + '</b>. 어떤 커밋도 자기 부모보다 먼저 나오지 않았어요. 부모가 둘인 C4는 C2, C3가 <b>둘 다</b> 나온 뒤에야 나왔어요.');
+    return frames;
+  }
+
+  /* ================= 11 병합 정렬 ================= */
+  var arr = [{ v: 38 }, { v: 27, t: "a" }, { v: 43 }, { v: 3 }, { v: 9 }, { v: 82 }, { v: 10 }, { v: 27, t: "b" }];
+  function lab(o) { return o.t === "b" ? "27′" : String(o.v); }
+  var GS = [8, 4, 2, 1, 2, 4, 8];
+  var ROWNAME = ["입력", "나누기", "나누기", "1개씩", "합치기", "합치기", "결과"];
+  function chipX(row, k) { return 76 + k * 62 + Math.floor(k / GS[row]) * 12; }
+  function rowY(row) { return 30 + row * 58; }
+  function mergeFrames() {
+    var frames = [], groups = [];
+    function seg(row, lo, items) { return { row: row, lo: lo, items: items }; }
+    function mergeLog(L, Rr) {
+      var res = [], log = [], i = 0, j = 0;
+      while (i < L.length && j < Rr.length) {
+        if (Rr[j].v < L[i].v) { log.push(lab(L[i]) + " vs " + lab(Rr[j]) + " → " + lab(Rr[j])); res.push(Rr[j++]); }
+        else if (Rr[j].v === L[i].v) { log.push(lab(L[i]) + " = " + lab(Rr[j]) + " → 왼쪽 " + lab(L[i]) + " 먼저"); res.push(L[i++]); }
+        else { log.push(lab(L[i]) + " vs " + lab(Rr[j]) + " → " + lab(L[i])); res.push(L[i++]); }
+      }
+      while (i < L.length) res.push(L[i++]);
+      while (j < Rr.length) res.push(Rr[j++]);
+      log.push("남은 것은 그대로 붙임");
+      return { res: res, log: log };
+    }
+    function push(cur, src, say, panels, final) { frames.push({ groups: groups.slice(), cur: cur, src: src || [], say: say, panels: panels || [], final: final }); }
+    groups.push(seg(0, 0, arr));
+    push([0], null, '정렬할 8개예요. <b>27</b>과 <b>27′</b>은 값은 같지만 다른 원소예요(27이 앞에 있음). 끝까지 이 순서가 지켜지는지 보세요.');
+    for (var row = 1; row <= 3; row++) {
+      var cur = [];
+      for (var lo = 0; lo < 8; lo += GS[row]) { groups.push(seg(row, lo, arr.slice(lo, lo + GS[row]))); cur.push(groups.length - 1); }
+      push(cur, null, row < 3 ? '반으로 나눠요. ' + GS[row] + '개씩 ' + (8 / GS[row]) + '묶음.' : '1개씩이 될 때까지 나눴어요. <b>1개짜리는 이미 정렬된 상태</b>예요. 이제 합치면서 올라가요.');
+    }
+    var level = [];
+    for (var k = 0; k < 8; k++) level.push(arr.slice(k, k + 1));
+    var mrow = 4;
+    while (level.length > 1) {
+      var nextLevel = [];
+      for (var p = 0; p < level.length; p += 2) {
+        var L = level[p], Rr = level[p + 1], m = mergeLog(L, Rr);
+        var lo2 = (p / 2) * GS[mrow], srcRow = mrow - 1;
+        var srcIdx = groups.map(function (g, gi) { return g.row === srcRow && g.lo >= lo2 && g.lo < lo2 + GS[mrow] ? gi : -1; }).filter(function (x) { return x >= 0; });
+        groups.push(seg(mrow, lo2, m.res));
+        push([groups.length - 1], srcIdx, '[' + L.map(lab).join(", ") + '] + [' + Rr.map(lab).join(", ") + '] 합치기. 두 줄의 <b>맨 앞끼리만</b> 비교해서 작은 것을 먼저 내려놓아요.',
+          [{ label: "비교 기록", items: m.log, kind: "plain" }]);
+        nextLevel.push(m.res);
+      }
+      level = nextLevel; mrow++;
+    }
+    push([groups.length - 1], null, '끝! <b>3, 9, 10, 27, 27′, 38, 43, 82</b>. 27이 27′보다 여전히 앞이죠? 이게 <b>안정 정렬</b>. 나누는 층이 log₂8 = 3층, 층마다 8개를 한 번씩 비교 → <b>O(n log n)</b>.',
+      [{ label: "성능", items: ["평균 O(n log n)", "최악 O(n log n)", "메모리 O(n)", "안정 ✓"], kind: "accent" }], true);
+    return frames;
+  }
+  function renderMerge(fr) {
+    var s = "";
+    for (var r = 0; r < 7; r++) s += '<text class="rowlabel" x="6" y="' + (rowY(r) + 17) + '">' + ROWNAME[r] + '</text>';
+    fr.groups.forEach(function (g, gi) {
+      var isCur = fr.cur.indexOf(gi) >= 0, isSrc = fr.src.indexOf(gi) >= 0, isNew = isCur && gi === fr.groups.length - 1;
+      var x0 = chipX(g.row, g.lo) - 5, x1 = chipX(g.row, g.lo + g.items.length - 1) + 55, y = rowY(g.row);
+      s += '<g' + (isNew && !fr.final ? ' class="pop"' : '') + '>';
+      s += '<rect class="grp' + (isCur ? " cur" : "") + '" x="' + x0 + '" y="' + (y - 5) + '" width="' + (x1 - x0) + '" height="44" rx="10"/>';
+      g.items.forEach(function (o, j) {
+        var x = chipX(g.row, g.lo + j);
+        var cls = isCur ? (fr.final ? "done" : "cur") : isSrc ? "src" : "idle";
+        if (o.t && (fr.final || isCur)) cls += " twin";
+        s += '<rect class="chip ' + cls + '" x="' + x + '" y="' + y + '" width="50" height="34" rx="8"/>';
+        s += '<text class="ctext" x="' + (x + 25) + '" y="' + (y + 17) + '">' + lab(o) + '</text>';
+      });
+      s += '</g>';
+    });
+    return s;
+  }
+
+  /* ================= 12 역색인 ================= */
+  var IC = [["356a192", "Initial commit", "Alice"], ["da4b923", "Add login feature", "Alice"], ["77de68d", "Add payment feature", "Alice"], ["1b64538", "Fix login bug", "Bob"]];
+  function buildIndex(n) {
+    var kw = [], kmap = {}, au = [], amap = {};
+    for (var i = 0; i < n; i++) {
+      var h = IC[i][0];
+      IC[i][1].split(" ").forEach(function (w) {
+        w = w.toLowerCase();
+        if (!(w in kmap)) { kmap[w] = []; kw.push(w); }
+        if (kmap[w][kmap[w].length - 1] !== h) kmap[w].push(h);
+      });
+      var a = IC[i][2].toLowerCase();
+      if (!(a in amap)) { amap[a] = []; au.push(a); }
+      amap[a].push(h);
+    }
+    return { kw: kw, kmap: kmap, au: au, amap: amap };
+  }
+  function indexFrames() {
+    var f = [];
+    f.push({ n: 0, say: '역색인 = <b>단어 → 그 단어가 나오는 커밋 목록</b>. 책 맨 뒤 "찾아보기"와 같아요. 처음엔 비어 있어요.', panels: [] });
+    for (var i = 1; i <= 4; i++) {
+      var c = IC[i - 1], toks = c[1].split(" ").map(function (w) { return w.toLowerCase(); });
+      var say = '<b>COMMIT "' + c[1] + '"</b> (' + c[2] + ') → 공백으로 나누고 소문자로 → <b>' + toks.join(", ") + '</b>. 단어마다 이 커밋 hash(' + c[0] + ')를 목록에 추가해요.';
+      if (i === 3) say += ' add, feature는 이미 있는 줄이라 <b>목록 끝에 붙이기만</b> 해요.';
+      if (i === 4) say += ' 작성자 색인에는 bob이 새로 생겨요.';
+      f.push({ n: i, touched: toks, author: c[2].toLowerCase(), say: say,
+        panels: [{ label: "split + lower 결과", items: toks, kind: "wait" }] });
+    }
+    f.push({ n: 4, hit: ["login"], say: '<b>SEARCH login</b>: 사전에서 "login" 줄을 <b>한 번</b> 찾으면 그 목록이 바로 답이에요. 다른 커밋은 아예 보지 않아요. → <b>O(1) + 결과 수</b>',
+      panels: [{ label: "결과", items: ["da4b923", "1b64538"], kind: "accent" }] });
+    f.push({ n: 4, scan: true, say: '역색인이 <b>없다면</b>: 커밋 메시지를 처음부터 끝까지 <b>전부</b> 읽어야 해요 → <b>O(N × 메시지 길이)</b>. 커밋이 10배가 되면 검색 일도 10배.',
+      panels: [{ label: "읽은 메시지 수", items: ["4개 전부"], kind: "bad" }] });
+    f.push({ n: 4, hit: ["login", "bug"], say: '<b>SEARCH "login bug"</b>처럼 단어가 여러 개면 각 목록의 <b>교집합</b>: login [da4b923, 1b64538] ∩ bug [1b64538] = <b>1b64538</b>.',
+      panels: [{ label: "결과", items: ["1b64538"], kind: "accent" }] });
+    f.push({ n: 4, ahit: "bob", say: '<b>SEARCH --author=bob</b>: 작성자 색인도 똑같이 "bob" 줄 하나만 보면 끝이에요. 이 프로젝트는 단어 색인과 작성자 색인, <b>2종</b>을 만들어요(과제 최소 요구).',
+      panels: [{ label: "결과", items: ["1b64538"], kind: "accent" }] });
+    return f;
+  }
+  function renderIndex(fr) {
+    var idx = buildIndex(fr.n), s = "";
+    s += txt(14, 18, "커밋 (만든 순서)", "t-title") + txt(330, 18, "단어 색인  keyword_index", "t-title");
+    for (var i = 0; i < 4; i++) {
+      var y = 34 + i * 40;
+      if (i < fr.n) {
+        var c = IC[i], isNew = i === fr.n - 1 && fr.touched;
+        var cls = "b-plain";
+        if (fr.scan) cls = c[1].toLowerCase().indexOf("login") >= 0 ? "b-yes" : "b-no";
+        s += '<g' + (isNew ? ' class="pop"' : '') + '>' + rect(14, y, 296, 32, cls) + txt(26, y + 16, c[0], "t-small") + txt(92, y + 16, c[1], "t-body") + '</g>';
+        if (fr.scan) s += txt(298, y + 16, cls === "b-yes" ? "✓" : "✗", cls === "b-yes" ? "t-yes" : "t-no", "end");
+      } else {
+        s += rect(14, y, 296, 32, "b-empty");
+      }
+    }
+    s += txt(14, 208, "작성자 색인  author_index", "t-title");
+    idx.au.forEach(function (a, j) {
+      var y = 222 + j * 36, hit = fr.ahit === a, touch = fr.author === a;
+      s += rect(14, y, 296, 30, hit ? "b-hit" : touch ? "b-touch" : "b-plain");
+      s += txt(26, y + 15, a, "t-mono") + txt(80, y + 15, "→ [" + idx.amap[a].join(", ") + "]", "t-small");
+    });
+    if (!idx.au.length) s += rect(14, 222, 296, 30, "b-empty");
+    idx.kw.forEach(function (w, j) {
+      var y = 30 + j * 34, hit = fr.hit && fr.hit.indexOf(w) >= 0, touch = fr.touched && fr.touched.indexOf(w) >= 0;
+      var isNewRow = touch && buildIndex(fr.n - 1).kw.indexOf(w) < 0;
+      s += '<g' + (isNewRow ? ' class="pop"' : '') + '>' + rect(330, y, 360, 28, hit ? "b-hit" : touch ? "b-touch" : "b-plain", 7);
+      s += txt(342, y + 14, w, "t-mono") + txt(422, y + 14, "→ [" + idx.kmap[w].join(", ") + "]", "t-small") + '</g>';
+    });
+    if (!idx.kw.length) s += rect(330, 30, 360, 28, "b-empty", 7) + txt(510, 44, "(비어 있음)", "t-muted", "middle");
+    return s;
+  }
+
+  /* ================= 연결 ================= */
+  var GL = [["idle", "아직 안 봄"], ["wait", "큐에서 대기"], ["cur", "지금 처리 중"], ["done", "처리 끝"]];
+  var configs = {
+    graph: { view: [430, 300], label: "그래프 단계별 그림", frames: graphFrames(),
+             legend: [["idle", "점"], ["cur", "주목할 점"], ["wait", "이웃 / 부모"], ["path", "강조한 선"]] },
+    tree: { view: [520, 320], label: "커밋 트리 단계별 그림", frames: treeFrames(),
+            legend: [["cur", "방금 만든 커밋"], ["done", "커밋"], ["path", "뿌리"], ["wait", "잎"], ["dim", "가상의 merge"]] },
+    dag: { view: [420, 300], label: "DAG와 사이클 단계별 그림", frames: dagFrames(),
+           legend: [["idle", "점"], ["path", "따라간 길"], ["bad", "사이클"], ["done", "정상"]] },
+    hashmap: { view: [640, 310], label: "해시맵 단계별 그림", frames: hashFrames(), render: renderHash,
+               legend: [["bad", "비교했는데 아님"], ["done", "찾음"], ["wait", "칸 번호 계산"], ["path", "바로 찾음"]] },
+    queue: { view: [640, 250], label: "큐 단계별 그림", frames: queueFrames(), render: renderQueue,
+             legend: [["wait", "줄 서 있음"], ["done", "꺼낸 것"]] },
+    bfs: { view: [580, 330], label: "BFS 단계별 그림", frames: bfsFrames(), legend: GL },
+    path: { view: [580, 330], label: "최단 경로 단계별 그림", frames: pathFrames(),
+            legend: [["idle", "아직 안 봄"], ["cur", "이번 겹"], ["done", "거리 기록됨"], ["path", "최단 경로"]] },
+    lexpath: { view: [440, 300], label: "PATH 사전순 단계별 그림", frames: lexFrames(),
+               legend: [["cur", "이번에 거리 정함"], ["done", "거리 기록됨"], ["wait", "고르지 않은 후보"], ["path", "고른 경로"]] },
+    ancestors: { view: [500, 290], label: "조상 탐색 단계별 그림", frames: ancFrames(),
+                 legend: [["path", "출발"], ["wait", "큐에서 대기"], ["cur", "지금 처리 중"], ["done", "찾은 조상"], ["dim", "조상 아님"]] },
+    topo: { view: [500, 290], label: "위상 정렬 단계별 그림", frames: topoFrames(),
+            legend: [["idle", "아직 못 꺼냄"], ["wait", "큐에서 대기 (진입 0)"], ["cur", "지금 출력"], ["done", "출력됨"]] },
+    mergesort: { view: [660, 440], label: "병합 정렬 단계별 그림", frames: mergeFrames(), render: renderMerge,
+                 legend: [["wait", "합칠 두 줄"], ["cur", "이번에 만든 줄"], ["done", "최종 결과"], ["path", "27′ (같은 값 구분용)"]] },
+    index: { view: [700, 300], label: "역색인 단계별 그림", frames: indexFrames(), render: renderIndex,
+             legend: [["wait", "방금 추가된 줄"], ["path", "검색에 쓴 줄"], ["done", "단어가 있음"], ["bad", "단어가 없음"]] }
+  };
+  var specs = { graph: graphSpec, tree: treeSpec, dag: dagSpec, bfs: bfsSpec, path: bfsSpec, lexpath: lexSpec, ancestors: ancSpec, topo: topoSpec };
+  document.querySelectorAll("[data-stepper]").forEach(function (el) {
+    var id = el.getAttribute("data-stepper"), c = configs[id];
+    makeStepper(el, {
+      id: id, label: c.label, frames: c.frames, legend: c.legend, viewBox: c.view,
+      view: specs[id] ? GraphView(specs[id]) : { render: c.render }
+    });
+  });
+})();
+</script>
+</body>
+</html>
