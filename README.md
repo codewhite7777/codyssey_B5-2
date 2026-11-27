@@ -4,7 +4,11 @@
 > Git의 "커밋 · 브랜치 · HEAD · 로그 · 검색"을 메모리 위에서 직접 만들어 보며
 > **그래프(DAG) · BFS · 위상 정렬 · 병합 정렬 · 역색인**을 손으로 확인하는 프로젝트입니다.
 
-📋 **평가표 항목별 정리는 → [EVALUATION.md](EVALUATION.md)**
+| 문서 | 내용 |
+|---|---|
+| 📘 [CONCEPTS.md](CONCEPTS.md) | 과제에 필요한 개념 13개를 쉬운 말로 (그래프, 트리, DAG, 해시맵, 큐, BFS, 최단 경로, 조상 탐색, 위상 정렬, 병합 정렬, 역색인, 시간복잡도) |
+| 🎬 [개념 애니메이션](https://raw.githack.com/codewhite7777/codyssey_b5-2/main/docs/index.html) | 그림을 **클릭할 때마다 한 단계씩** 진행되는 학습 페이지 (파일: [`docs/index.html`](docs/index.html)) |
+| 📋 [EVALUATION.md](EVALUATION.md) | 평가표 항목별 답변 |
 
 ---
 
@@ -75,6 +79,8 @@ Commands:
 
 > 커밋 = **점(노드)**, 부모를 가리키는 화살표 = **선(간선)**.
 > 그래서 Git 이력은 **그래프**이고, LOG · PATH · ANCESTORS 는 모두 **그래프 탐색**입니다.
+
+더 자세한 개념 설명은 [CONCEPTS.md](CONCEPTS.md), 클릭으로 한 단계씩 보는 그림은 [개념 애니메이션](https://raw.githack.com/codewhite7777/codyssey_b5-2/main/docs/index.html)에 있어요.
 
 ---
 
